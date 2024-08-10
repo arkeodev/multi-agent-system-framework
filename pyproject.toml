@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "autorescure-ai"
+version = "0.1.0"
+description = "A multi-agent system leveraging GPT-4 for aerial search and rescue missions with real-time retrieval-augmented generation, managed by a hierarchical team structure and integrated with a Streamlit UI.."
+authors = ["Kenan Agyel <kenanagyel@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.12, <3.13"
+streamlit = "^1.37.1"
+langchain = "^0.2.12"
+langchain-openai = "^0.1.20"
+langchain-community = "^0.2.11"
+PyMuPDF = "^1.24.9"
+qdrant-client = "^1.10.1"
+langgraph = "^0.2.1"
+
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+black = "^24.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
