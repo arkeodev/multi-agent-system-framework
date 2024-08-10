@@ -19,7 +19,7 @@ Before you can run the application, you will need to have the following installe
 
 1. **Clone the repository:**
    ```bash
-   git clone https://your-repository-url.git
+   git clone https://github.com/arkeodev/multi-agent-system-framework.git
    cd multi-agent-system-framework
    ```
 
