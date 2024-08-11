@@ -28,7 +28,11 @@ class AgentModel(BaseModel):
 
 def create_agents(llm: ChatOpenAI, tools: List[BaseTool]) -> List[AgentModel]:
     logging.info("Creating agents...")
-    agent_config = load_agent_config()
+    try:
+        agent_config = load_agent_config()
+    except Exception as e:
+        logging.error(f"Failed to load agent configuration: {e}")
+        raise
     agents = []
 
     for role in agent_config["roles"]:

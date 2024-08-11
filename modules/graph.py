@@ -8,8 +8,10 @@ from langgraph.graph import END, StateGraph
 
 
 class AgentState(TypedDict):
-    messages: List[str]
-    next: str
+    """Represents the state of an agent in the system."""
+
+    messages: List[str]  # List of messages exchanged with the agent
+    next: str  # The identifier of the next agent or state
 
 
 def agent_node(

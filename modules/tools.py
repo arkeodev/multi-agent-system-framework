@@ -1,10 +1,6 @@
 # tools.py
-from typing import Any, Optional, Type
+from typing import Any, Type
 
-from langchain.callbacks.manager import (
-    AsyncCallbackManagerForToolRun,
-    CallbackManagerForToolRun,
-)
 from langchain.pydantic_v1 import BaseModel, Field
 from langchain.tools.base import BaseTool
 
@@ -26,9 +22,3 @@ class HandbookTool(BaseTool):
     def _run(self, query: str) -> str:
         """Synchronously fetch data from the handbook using the provided query."""
         return self.handbook_rag_chain.invoke({"question": query})
-
-    async def _arun(
-        self, query: str, run_manager: Optional[AsyncCallbackManagerForToolRun] = None
-    ) -> str:
-        """This method is a placeholder for asynchronous behavior, currently not implemented."""
-        raise NotImplementedError(f"{self.name} does not support async operations yet.")

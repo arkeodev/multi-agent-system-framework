@@ -18,7 +18,7 @@ config = load_configuration()
 
 def setup_rag_chain(file_url: str, llm: ChatOpenAI, vector_index_path: str) -> Any:
     """Set up the Retrieval-Augmented Generation (RAG) chain and save vector index."""
-    logging.info(f"File url is: {file_url}")
+    logging.info(f"Processing file URL: {file_url}")
     file_type = file_url.split(".")[-1]  # Extract file extension
     logging.info(f"Setting up RAG chain for {file_type} document")
     loader_class = config["document_loaders"].get(file_type)
