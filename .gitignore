@@ -178,3 +178,6 @@ volumes/
 
 # VS Code
 .vscode/
+
+# Vector_Index Folder
+vector_index.faiss/

@@ -1,6 +1,6 @@
 # supervisor.py
-import logging
 import json
+import logging
 from typing import Any, List
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -41,15 +41,20 @@ def create_team_supervisor(
             ),
         ]
     ).partial(options=str(options))
-    supervisor_agent = prompt | llm.bind_functions(functions=[function_def], function_call="route")
-    
+    supervisor_agent = prompt | llm.bind_functions(
+        functions=[function_def], function_call="route"
+    )
+
     def invoke_supervisor(state):
         result = supervisor_agent.invoke(state)
         logging.info(f"Supervisor response: {result}")
-        if hasattr(result, 'additional_kwargs') and 'function_call' in result.additional_kwargs:
-            function_call = result.additional_kwargs['function_call']
-            if function_call and function_call.get('name') == 'route':
-                arguments = json.loads(function_call['arguments'])
+        if (
+            hasattr(result, "additional_kwargs")
+            and "function_call" in result.additional_kwargs
+        ):
+            function_call = result.additional_kwargs["function_call"]
+            if function_call and function_call.get("name") == "route":
+                arguments = json.loads(function_call["arguments"])
                 state["next"] = arguments["next"]
         return state
 

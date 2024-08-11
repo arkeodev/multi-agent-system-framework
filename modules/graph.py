@@ -2,57 +2,56 @@
 import logging
 from functools import partial
 from typing import Any, Dict, List, TypedDict
+
 from langchain.agents import AgentExecutor
 from langgraph.graph import END, StateGraph
 
-class PilotTeamState(TypedDict):
+
+class AgentState(TypedDict):
     messages: List[str]
     next: str
 
+
 def agent_node(
-    state: PilotTeamState, agent: AgentExecutor, name: str
+    state: Dict[str, Any], agent: AgentExecutor, name: str
 ) -> Dict[str, Any]:
-    """Invoke the agent and return the response."""
-    # Invoke the agent with the current state and log the response
+    """Invoke the agent and return the response, ensuring state updates."""
     result = agent.invoke({"messages": state["messages"]})
-    logging.info(f"{name} response: {result['output']}")
+    new_messages = state["messages"] + [f"{name}: {result['output']}"]
     return {
-        "messages": state["messages"] + [f"{name}: {result['output']}"],
-        "next": "candc",
+        "messages": new_messages,
+        "next": "supervisor",  # Ensure there's always an update to 'next'
     }
 
+
+def supervisor_node(state: Dict[str, Any], supervisor_input: str) -> Dict[str, Any]:
+    """Process input from the supervisor to determine the next action."""
+    if supervisor_input == "FINISH":
+        state["next"] = "END"  # This ends the graph processing
+    else:
+        state["next"] = supervisor_input  # Set next agent to act
+    return state
+
+
 def create_graph(
-    pilot_agent: AgentExecutor,
-    copilot_agent: AgentExecutor,
-    cso_agent: AgentExecutor,
-    candc_agent: Any,
+    agent_dict: Dict[str, AgentExecutor], supervisor_agent: Any
 ) -> StateGraph:
-    """Create the conversation flow graph."""
-    # Define nodes for each agent
-    pilot_node = partial(agent_node, agent=pilot_agent, name="Pilot")
-    copilot_node = partial(agent_node, agent=copilot_agent, name="Copilot")
-    cso_node = partial(agent_node, agent=cso_agent, name="CSO")
+    """Create a state graph dynamically based on configured agent roles and transitions."""
+    logging.info("Creating state graph...")
+    graph = StateGraph(state_schema=AgentState)
+    for name, agent in agent_dict.items():
+        graph.add_node(name, partial(agent_node, agent=agent, name=name))
+    graph.add_node("supervisor", supervisor_agent)
 
-    # Initialize the graph
-    candc_graph = StateGraph(PilotTeamState)
+    for name in agent_dict:
+        graph.add_edge(name, "supervisor")
 
-    # Add nodes to the graph
-    candc_graph.add_node("Pilot", pilot_node)
-    candc_graph.add_node("Copilot", copilot_node)
-    candc_graph.add_node("CSO", cso_node)
-    candc_graph.add_node("candc", candc_agent)
-
-    # Define edges between nodes
-    candc_graph.add_edge("Pilot", "candc")
-    candc_graph.add_edge("Copilot", "candc")
-    candc_graph.add_edge("CSO", "candc")
-    candc_graph.add_conditional_edges(
-        "candc",
+    graph.add_conditional_edges(
+        "supervisor",
         lambda x: x["next"],
-        {"Pilot": "Pilot", "Copilot": "Copilot", "CSO": "CSO", "FINISH": END},
+        {name: name for name in agent_dict} | {"FINISH": END},
     )
 
-    # Set the entry point of the graph
-    candc_graph.set_entry_point("candc")
+    graph.set_entry_point("supervisor")
     logging.info("Graph setup complete")
-    return candc_graph
+    return graph
