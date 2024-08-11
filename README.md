@@ -45,7 +45,7 @@ Modify the `config.json` file to set up different models, document loaders, and 
     "PDF Loader": "https://example.com/pdf1.pdf",
     "Text Loader": "https://example.com/text1.txt"
   },
-  "default_scenario": "Enter your scenario here..."
+  "scenario": "Enter your scenario here..."
 }
 ```
 

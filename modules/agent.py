@@ -1,52 +1,59 @@
 # agent.py
-from typing import Any, Tuple
+import logging
+from typing import List
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
+from langchain.pydantic_v1 import BaseModel, validator
+from langchain.tools.base import BaseTool
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.tools import tool
+from langchain_core.runnables import Runnable
 from langchain_openai import ChatOpenAI
 
-
-def create_agents(
-    llm: ChatOpenAI, handbook_rag_chain: Any
-) -> Tuple[AgentExecutor, AgentExecutor, AgentExecutor]:
-    """Create agents for the pilot, copilot, and CSO."""
-
-    @tool
-    def retrieve_information(query: str) -> str:
-        """Provides detailed information from the 'Air Force Handbook'."""
-        # Add console log
-        print(f"Retrieving information for query: {query}")
-        return handbook_rag_chain.invoke({"question": query})
-
-    # Create individual agents with their respective roles
-    pilot_agent = create_agent(
-        llm,
-        [retrieve_information],
-        "You are a fully qualified pilot. Speak only as your role.",
-    )
-    copilot_agent = create_agent(
-        llm,
-        [retrieve_information],
-        "You are a fully qualified copilot. Speak only as your role.",
-    )
-    cso_agent = create_agent(
-        llm,
-        [retrieve_information],
-        "You are a fully qualified Combat Systems Operator. Speak only as your role.",
-    )
-    return pilot_agent, copilot_agent, cso_agent
+from modules.utils import load_agent_config
 
 
-def create_agent(llm: ChatOpenAI, tools: list, system_prompt: str) -> AgentExecutor:
-    """Create an agent with the specified tools and prompt."""
-    # Define the prompt and create the agent
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            ("system", system_prompt),
-            MessagesPlaceholder(variable_name="messages"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ]
-    )
-    agent = create_openai_functions_agent(llm, tools, prompt)
-    return AgentExecutor(agent=agent, tools=tools)
+class AgentModel(BaseModel):
+    role_name: str
+    agent: Runnable
+
+    @validator("role_name", allow_reuse=True)
+    def check_role_name(cls, v):
+        if not v:
+            raise ValueError("Role name must not be empty")
+        return v
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+def create_agents(llm: ChatOpenAI, tools: List[BaseTool]) -> List[AgentModel]:
+    logging.info("Creating agents...")
+    try:
+        agent_config = load_agent_config()
+    except Exception as e:
+        logging.error(f"Failed to load agent configuration: {e}")
+        raise
+    agents = []
+
+    for role in agent_config["roles"]:
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", role["prompt"]),
+                MessagesPlaceholder(variable_name="messages"),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ]
+        )
+        logging.debug(f"Prompt setup: {prompt}")
+
+        agent = create_openai_functions_agent(llm, tools, prompt)
+        logging.debug(f"Agent executor setup: {agent}")
+
+        agent = AgentModel(
+            role_name=role["name"],
+            agent=AgentExecutor(agent=agent, tools=tools),
+        )
+        agents.append(agent)
+        logging.debug(f"Agent setup: {agent}")
+
+    logging.info("Agents created successfully.")
+    return agents

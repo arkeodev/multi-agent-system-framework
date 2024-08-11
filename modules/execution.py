@@ -1,39 +1,26 @@
 # execution.py
 import logging
-from typing import Any, List
-from langgraph.graph.state import CompiledStateGraph
-from modules.graph import StateGraph, create_graph
+from typing import Any, Dict, List
+
+from langchain.agents import AgentExecutor
+
+from modules.graph import create_graph
+
 
 def run_scenario(
-    scenario: str,
-    pilot_agent: Any,
-    copilot_agent: Any,
-    cso_agent: Any,
-    candc_agent: Any,
+    scenario: str, agent_dict: Dict[str, AgentExecutor], supervisor_agent: Any
 ) -> List[str]:
-    """Run the search and rescue scenario."""
-    state = {"messages": [scenario], "next": "candc"}
-    candc_graph: StateGraph = create_graph(
-        pilot_agent, copilot_agent, cso_agent, candc_agent
-    )
-    compiled_graph: CompiledStateGraph = candc_graph.compile()
-
-    message_list = []  # Initialize message list with the scenario description
-
+    state = {"messages": [scenario], "next": "supervisor"}
+    compiled_graph = create_graph(agent_dict, supervisor_agent).compile()
+    message_list = []
     while True:
-        logging.info(f"Invoking chain with current state: {state}")
+        logging.info(f"Current state before invoke: {state}")
         result = compiled_graph.invoke(input=state)
-
-        # Always update the state and messages before checking for the finish condition
-        if 'messages' in result:
-            message_list.extend(result['messages'])  # Append new messages to the list
-            state.update(result)
-            logging.info("\n".join(result["messages"]))
-
-        if "FINISH" in result.get("next", ""):
-            logging.info("Scenario finished")
-            break  # Exit after processing all updates for the current iteration
-
-        logging.info("---")
-
-    return message_list  # Return the accumulated messages
+        logging.info(f"Result after invoke: {result}")
+        if result.get("messages"):
+            message_list.extend(result["messages"])
+        if result.get("next") != state["next"]:
+            state["next"] = result["next"]
+        if "FINISH" in state.get("next", ""):
+            break
+    return message_list
