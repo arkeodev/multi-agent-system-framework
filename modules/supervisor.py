@@ -6,6 +6,8 @@ from typing import Any, List
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_openai import ChatOpenAI
 
+from modules.utils import load_agent_config
+
 
 def create_team_supervisor(
     llm: ChatOpenAI, system_prompt: str, members: List[str]
@@ -31,13 +33,14 @@ def create_team_supervisor(
         },
     }
     # Define the prompt and create the supervisor agent
+    agent_config = load_agent_config()
     prompt = ChatPromptTemplate.from_messages(
         [
             ("system", system_prompt),
             MessagesPlaceholder(variable_name="messages"),
             (
                 "system",
-                "Who should act next? Or should we FINISH? Select one of: {options}",
+                agent_config["supervisor_prompts"]["decision"],
             ),
         ]
     ).partial(options=str(options))
@@ -47,7 +50,7 @@ def create_team_supervisor(
 
     def invoke_supervisor(state):
         result = supervisor_agent.invoke(state)
-        logging.info(f"Supervisor response: {result}")
+        logging.debug(f"Supervisor response: {result}")
         if (
             hasattr(result, "additional_kwargs")
             and "function_call" in result.additional_kwargs
