@@ -19,6 +19,7 @@ def agent_node(
 ) -> Dict[str, Any]:
     """Invoke the agent and return the response, ensuring state updates."""
     result = agent.invoke({"messages": state["messages"]})
+    logging.debug(f"{name}: {result['output']}")
     new_messages = state["messages"] + [f"{name}: {result['output']}"]
     return {
         "messages": new_messages,
@@ -26,12 +27,15 @@ def agent_node(
     }
 
 
-def supervisor_node(state: Dict[str, Any], supervisor_input: str) -> Dict[str, Any]:
+def supervisor_node(state: Dict[str, Any], supervisor_agent: Any) -> Dict[str, Any]:
     """Process input from the supervisor to determine the next action."""
-    if supervisor_input == "FINISH":
-        state["next"] = "END"  # This ends the graph processing
-    else:
-        state["next"] = supervisor_input  # Set next agent to act
+    # Simulate a decision from the supervisor or replace with an actual API call or logic
+    supervisor_decision = supervisor_agent({"messages": state["messages"]})
+
+    # Update the state based on the supervisor's decision
+    state["next"] = supervisor_decision.get("next")
+    logging.debug(f"Supervisor decision: {supervisor_decision.get("next")}")
+
     return state
 
 
@@ -43,7 +47,9 @@ def create_graph(
     graph = StateGraph(state_schema=AgentState)
     for name, agent in agent_dict.items():
         graph.add_node(name, partial(agent_node, agent=agent, name=name))
-    graph.add_node("supervisor", supervisor_agent)
+    graph.add_node(
+        "supervisor", partial(supervisor_node, supervisor_agent=supervisor_agent)
+    )
 
     for name in agent_dict:
         graph.add_edge(name, "supervisor")
@@ -51,7 +57,7 @@ def create_graph(
     graph.add_conditional_edges(
         "supervisor",
         lambda x: x["next"],
-        {name: name for name in agent_dict} | {"FINISH": END},
+        {name: name for name in agent_dict.keys()} | {"FINISH": END},
     )
 
     graph.set_entry_point("supervisor")
