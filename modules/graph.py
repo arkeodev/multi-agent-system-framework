@@ -57,7 +57,7 @@ def create_graph(
     graph.add_conditional_edges(
         "supervisor",
         lambda x: x["next"],
-        {name: name for name in agent_dict.keys()} | {"FINISH": END},
+        {name: name for name in agent_dict} | {"FINISH": END},
     )
 
     graph.set_entry_point("supervisor")
