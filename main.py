@@ -17,7 +17,7 @@ from modules.utils import (
 def main():
     """Main function to initialize and run the Streamlit UI."""
     st.set_page_config(layout="wide")
-    st.title("Document Scraper - Multi-Agent System")
+    st.title("Multi-Agent Scenario Executer")
 
     # UI Setup
     left_column, _, right_column = st.columns([1, 0.1, 2.6])
