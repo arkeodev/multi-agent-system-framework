@@ -1,18 +1,18 @@
 # Multi-Agent System Framework
 
-This project implements a multi-agent system framework using Streamlit and LangChain, designed to facilitate complex tasks by coordinating multiple agents. The framework is highly modular, allowing easy integration and swapping of components such as models, document loaders, and agent roles based on specific scenarios.
+This project implements a multi-agent system framework using Streamlit, LangChain and LangGraph designed to facilitate complex tasks by coordinating multiple agents. The framework is highly modular, allowing for easy integration and swapping of components such as models, document loaders, and agent roles based on specific scenarios.
 
 ## Features
 
-- **Modular Architecture**: Easily swap out AI models, document loaders, and other components.
-- **Dynamic Agent Roles**: Configure and extend agent roles dynamically through a user-friendly interface.
-- **Interactive UI**: Leverage Streamlit to provide an intuitive interface for inputting scenarios and viewing results.
-- **Configurable Scenarios**: Run custom scenarios by configuring agents and tasks through the UI.
+- **Modular Architecture**: Swap out AI models, document loaders, and other components effortlessly.
+- **Dynamic Agent Configuration**: Configure agent roles dynamically through a JSON configuration, adapting the application for various scenarios without code changes.
+- **Interactive UI**: Use Streamlit to provide an intuitive interface for inputting scenarios and viewing results.
+- **Configurable Scenarios**: Run custom scenarios by configuring agents and tasks through a user-friendly JSON interface.
 
 ## Prerequisites
 
-Before you can run the application, you will need to have the following installed:
-- Python 3.8 or higher
+Before running the application, ensure you have the following:
+- Python 3.12
 - Poetry for dependency management and environment setup
 
 ## Installation
@@ -28,24 +28,53 @@ Before you can run the application, you will need to have the following installe
    poetry install
    ```
 
-3. **Setup environment variables:**
-   Set your OpenAI API key in the virtual environment:
-   ```bash
-   poetry run export OPENAI_API_KEY='your-openai-api-key'
-   ```
-
 ## Configuration
 
-Modify the `config.json` file to set up different models, document loaders, and default scenarios:
+Modify the `config.json` file for general settings like models and document loaders, and use `agent_configuration.json` to define agent roles and scenario-specific behaviors dynamically:
+
+### config.json
 ```json
 {
-  "models": ["gpt-4o", "gpt-3.5-turbo"],
-  "document_loaders": ["PDF Loader", "Text Loader"],
-  "document_urls": {
-    "PDF Loader": "https://example.com/pdf1.pdf",
-    "Text Loader": "https://example.com/text1.txt"
+  "models": ["gpt-4o", "gpt-4o-mini"],
+  "embedding_model": "text-embedding-3-small",
+  "document_loaders": {
+    "pdf": "PyMuPDFLoader",
+    "txt": "SimpleTextLoader"
+  }
+}
+```
+
+### agent_configuration.json
+Here's an example of configuring a scenario for a disaster response team:
+```json
+{
+  "supervisor_prompts": {
+    "initial": "You are the supervisor of a disaster response team. Direct the team's actions or decide to conclude the operations.",
+    "decision": "Who should act next? Or should we conclude operations? Select one of: {options}"
   },
-  "scenario": "Enter your scenario here..."
+  "members": [
+    "Commander",
+    "Logistics Officer",
+    "Field Agent"
+  ],
+  "roles": [
+    {
+      "name": "Commander",
+      "prompt": "You are the Commander. Your role is to oversee the operation and make strategic decisions."
+    },
+    {
+      "name": "Logistics Officer",
+      "prompt": "You are the Logistics Officer. Manage resources and ensure all logistical needs are met."
+    },
+    {
+      "name": "Field Agent",
+      "prompt": "You are the Field Agent. Assess the situation on the ground and provide updates to the team."
+    }
+  ],
+  "document_urls": [
+    "https://example.com/emergency_protocol.pdf"
+  ],
+  "scenario": "Disaster Response Scenario: A major earthquake has hit the urban area of Metropolis. Buildings are damaged, and there are numerous injuries. The team's mission includes: \n1. Assessment of the situation on the ground. \n2. Coordination of rescue and medical teams. \n3. Distribution of supplies and resources.\nExecute the mission with each team member performing their designated roles."
 }
 ```
 
