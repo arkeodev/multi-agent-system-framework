@@ -8,7 +8,7 @@ from modules.agent import AgentModel, create_agents
 from modules.execution import execute_scenario
 from modules.rag import load_vectorstore, setup_rag_chain
 from modules.supervisor import create_team_supervisor
-from modules.tools import HandbookTool
+from modules.tools import RagTool
 from modules.utils import load_agent_config
 
 
@@ -32,18 +32,18 @@ class App:
         return messages
 
     def setup_agents(self) -> List[AgentModel]:
-        """Set up the agents using the handbook tool chain."""
+        """Set up the agents using the RAG tool chain."""
         logging.info("Setting up agents")
         if os.path.exists(self.vector_index_path):
-            handbook_rag_chain = load_vectorstore(self.vector_index_path, self.llm)
+            rag_chain = load_vectorstore(self.vector_index_path, self.llm)
         else:
-            handbook_rag_chain = setup_rag_chain(
+            rag_chain = setup_rag_chain(
                 self.agent_config["document_urls"],
                 self.llm,
                 self.vector_index_path,
             )
-        handbook_tool = HandbookTool(handbook_rag_chain=handbook_rag_chain)
-        agents: List[AgentModel] = create_agents(self.llm, [handbook_tool])
+        rag_tool = RagTool(rag_chain=rag_chain)
+        agents: List[AgentModel] = create_agents(self.llm, [rag_tool])
         return agents
 
     def create_supervisor(self) -> Any:
