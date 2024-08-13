@@ -34,7 +34,7 @@ class HandbookTool(BaseTool):
             return result
         except Exception as e:
             logging.error(f"Failed to retrieve data for query '{query}': {str(e)}")
-            raise RuntimeError(f"Error processing query: {str(e)}")
+            raise RuntimeError(f"Error processing query: {str(e)}") from e
 
     async def _arun(self, query: str) -> str:
         """Asynchronously fetch data from the handbook, mirroring the synchronous _run method for future use."""

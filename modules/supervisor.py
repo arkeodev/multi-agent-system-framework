@@ -2,7 +2,7 @@
 
 import json
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, List
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
