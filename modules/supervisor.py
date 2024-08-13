@@ -1,37 +1,38 @@
 # supervisor.py
+
 import json
 import logging
-from typing import Any, List
+from typing import Any, Callable, Dict, List
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_openai import ChatOpenAI
 
 from modules.utils import load_agent_config
 
 
 def create_team_supervisor(
-    llm: ChatOpenAI, system_prompt: str, members: List[str]
-) -> Any:
-    """Create a supervisor agent to manage the team."""
-    # Define the options for the supervisor to choose the next role
+    llm: Any, system_prompt: str, members: List[str]
+) -> Callable:
+    """Create a supervisor agent to manage the team dynamically based on a specified prompt and team members."""
+    # List of options that the supervisor can choose from, including the possibility to end the session
     options = ["FINISH"] + members
+
+    # Function definition for routing between agents
     function_def = {
         "name": "route",
-        "description": "Select the next role.",
+        "description": "Select the next role to act.",
         "parameters": {
             "title": "routeSchema",
             "type": "object",
             "properties": {
                 "next": {
                     "title": "Next",
-                    "anyOf": [
-                        {"enum": options},
-                    ],
+                    "anyOf": [{"enum": options}],
                 },
             },
             "required": ["next"],
         },
     }
+
     # Define the prompt and create the supervisor agent
     agent_config = load_agent_config()
     prompt = ChatPromptTemplate.from_messages(
@@ -44,11 +45,14 @@ def create_team_supervisor(
             ),
         ]
     ).partial(options=str(options))
+
+    # Bind the prompt with the language model and function definition
     supervisor_agent = prompt | llm.bind_functions(
         functions=[function_def], function_call="route"
     )
 
     def invoke_supervisor(state):
+        """Invokes the supervisor agent with the current state and updates the state based on the decision made by the supervisor."""
         result = supervisor_agent.invoke(state)
         logging.debug(f"Supervisor response: {result}")
         if (

@@ -4,9 +4,5 @@
   "document_loaders": {
     "pdf": "PyMuPDFLoader",
     "txt": "SimpleTextLoader"
-  },
-  "document_urls": {
-    "pdf": "https://static.e-publishing.af.mil/production/1/af_a1/publication/afh1/afh1.pdf",
-    "txt": ""
   }
 }

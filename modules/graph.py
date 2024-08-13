@@ -1,4 +1,5 @@
 # graph.py
+
 import logging
 from functools import partial
 from typing import Any, Dict, List, TypedDict
@@ -8,22 +9,22 @@ from langgraph.graph import END, StateGraph
 
 
 class AgentState(TypedDict):
-    """Represents the state of an agent in the system."""
+    """Represents the state of an agent within the graph system, containing messages and tracking the next node."""
 
     messages: List[str]  # List of messages exchanged with the agent
-    next: str  # The identifier of the next agent or state
+    next: str  # The identifier of the next agent or node to process
 
 
 def agent_node(
     state: Dict[str, Any], agent: AgentExecutor, name: str
 ) -> Dict[str, Any]:
-    """Invoke the agent and return the response, ensuring state updates."""
+    """Node function for agents to process input and produce output."""
     result = agent.invoke({"messages": state["messages"]})
-    logging.debug(f"{name}: {result['output']}")
+    logging.debug(f"{name} output: {result['output']}")
     new_messages = state["messages"] + [f"{name}: {result['output']}"]
     return {
         "messages": new_messages,
-        "next": "supervisor",  # Ensure there's always an update to 'next'
+        "next": "supervisor",  # Transition control back to the supervisor
     }
 
 
@@ -42,18 +43,20 @@ def supervisor_node(state: Dict[str, Any], supervisor_agent: Any) -> Dict[str, A
 def create_graph(
     agent_dict: Dict[str, AgentExecutor], supervisor_agent: Any
 ) -> StateGraph:
-    """Create a state graph dynamically based on configured agent roles and transitions."""
+    """Constructs a state graph dynamically based on configured agent roles and transitions."""
     logging.info("Creating state graph...")
     graph = StateGraph(state_schema=AgentState)
+
+    # Add all agents and the supervisor to the graph
     for name, agent in agent_dict.items():
         graph.add_node(name, partial(agent_node, agent=agent, name=name))
     graph.add_node(
         "supervisor", partial(supervisor_node, supervisor_agent=supervisor_agent)
     )
 
+    # Set up edges from each agent to the supervisor and conditional edges based on supervisor decisions
     for name in agent_dict:
         graph.add_edge(name, "supervisor")
-
     graph.add_conditional_edges(
         "supervisor",
         lambda x: x["next"],

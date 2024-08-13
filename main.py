@@ -1,16 +1,11 @@
 # main.py
 
 import os
-from typing import List
 
 import streamlit as st
 from langchain_openai import ChatOpenAI
 
-from modules.agent import AgentModel, create_agents
-from modules.execution import run_scenario
-from modules.rag import load_vectorstore, setup_rag_chain
-from modules.supervisor import create_team_supervisor  # Make sure it's updated
-from modules.tools import HandbookTool
+from modules.app import App
 from modules.utils import (
     load_agent_config,
     load_configuration,
@@ -18,54 +13,57 @@ from modules.utils import (
     setup_logging,
 )
 
-setup_logging()
 
-# Load configuration
-config = load_configuration()
-agent_config = load_agent_config()
+def main():
+    """Main function to initialize and run the Streamlit UI."""
+    st.set_page_config(layout="wide")
+    st.title("Multi-Agent System for Search and Rescue Mission")
 
-# Streamlit UI for OpenAI API key and model selection
-st.title("Multi-Agent System for Search and Rescue Mission")
-set_api_keys()
+    # UI Setup
+    left_column, _, right_column = st.columns([1, 0.1, 2.6])
 
-# Streamlit UI for selecting the model
-model_choice = st.selectbox("Select the model to use:", config["models"], index=0)
+    with left_column:
+        model_choice, api_key, recursion_limit = display_ui()
 
-# Initialize LLM with the selected model
-llm = ChatOpenAI(model=model_choice)
+    with right_column:
+        scenario = display_scenario()
 
-# Streamlit UI for selecting the document loader
-document_loader_choice = st.selectbox(
-    "Select the document loader:", list(config["document_loaders"].keys()), index=0
-)
+    llm = ChatOpenAI(
+        model=model_choice, api_key=api_key
+    )  # Ensure API key is correctly used
+    app = App(llm, recursion_limit)
 
-# Define the file path for the vector index
-vector_index_path = "vector_index.faiss"
+    # Trigger scenario execution
+    if st.button("Run Scenario"):
+        messages = app.setup_and_run_scenario(scenario, recursion_limit)
+        st.write("\n".join(messages))
 
-# Scenario text input
-scenario = st.text_area("Scenario Text", agent_config["scenario"], height=300)
 
-# Textbox for intermediate steps
-steps_box = st.empty()
+def display_ui() -> tuple:
+    """Displays the user interface for model selection and API key input."""
+    config = load_configuration()
 
-# Button to trigger the scenario
-if st.button("Run Scenario"):
-    if os.path.exists(vector_index_path):
-        handbook_rag_chain = load_vectorstore(vector_index_path, llm)
+    if not os.path.exists(".env"):
+        api_key = st.text_input("Enter your OpenAI API Key:")
     else:
-        handbook_rag_chain = setup_rag_chain(
-            config["document_urls"][document_loader_choice],
-            llm,
-            vector_index_path,
-        )
-    handbook_tool = HandbookTool(handbook_rag_chain=handbook_rag_chain)
-    agents: List[AgentModel] = create_agents(llm=llm, tools=[handbook_tool])
-    # Change to use only RAG chain and remove manual member inputs
-    candc_agent = create_team_supervisor(
-        llm=llm,
-        system_prompt=agent_config["supervisor_prompts"]["initial"],
-        members=agent_config["members"],
+        set_api_keys()
+        api_key = os.getenv("OPENAI_API_KEY")
+
+    model_choice = st.selectbox("Select the model to use:", config["models"], index=0)
+    recursion_limit = st.number_input(
+        "Set Recursion Limit:", min_value=10, max_value=100, value=25
     )
-    agent_dict = {agent.role_name: agent.agent for agent in agents}
-    messages = run_scenario(scenario, agent_dict, candc_agent)
-    steps_box.text("\n".join(messages))  # Update steps_box with the collected messages
+
+    return model_choice, api_key, recursion_limit
+
+
+def display_scenario() -> str:
+    """Displays the scenario text input area."""
+    agent_config = load_agent_config()
+    scenario = st.text_area("Scenario Text", agent_config["scenario"], height=300)
+    return scenario
+
+
+if __name__ == "__main__":
+    setup_logging()
+    main()
