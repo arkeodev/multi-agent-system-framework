@@ -20,11 +20,14 @@ from modules.utils import (
 
 def main():
     st.set_page_config(layout="wide")
-    st.title("Multi-Agent Scenario Executer")
 
-    left_column, _, right_column = st.columns([1, 0.1, 2.6])
+    # Load CSS styles
+    load_css()
+
+    left_column, _, right_column = st.columns([1, 0.1, 2])
 
     with left_column:
+        display_title()
         model_choice, recursion_limit = display_ui()
 
     with right_column:
@@ -52,6 +55,14 @@ def main():
                 st.error(f"Error running the scenario: {str(e)}")
         else:
             st.error("Configuration is required to run the scenario.")
+
+
+def display_title() -> None:
+    """Display title and image."""
+    # Use a container to wrap the image for specific styling
+    st.markdown("<h1>m o l e</h1>", unsafe_allow_html=True)
+    st.image("images/mole.png")
+    st.markdown("<h3>Multi-agent Omni Langraph Executer</h3>", unsafe_allow_html=True)
 
 
 def display_ui() -> tuple:
@@ -101,6 +112,13 @@ def validate_and_parse_json(json_input: str) -> Optional[AgentConfig]:
     except ValidationError as e:
         st.error(f"Invalid configuration: {e.json()}")
         return None
+
+
+def load_css():
+    """Load CSS styles from a css file."""
+    with open(".css/app_styles.css", "r") as f:
+        css = f.read()
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
