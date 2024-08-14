@@ -5,45 +5,35 @@ body {
 }
 
 /* Apply to all headers */
-h1 {
-    font-size: 2.5em;
-    color: #333333;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-}
-h2 {
-    font-size: 2.0em;
-    color: #333333;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-}
-h3, h4, h5, h6 {
+h1, h2, h3, h4, h5, h6 {
     color: #333333;
     font-family: 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* Specific widget styles */
-.stTextInput, .stButton, .stSelectbox, .stTextArea, .stExpander, .stExpander > label {
-    font-size: 16px;
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    color: #333333;
+h1 {
+    font-size: 2.5em;
+}
+
+h2 {
+    font-size: 2.0em;
 }
 
 
 /* Customize chat messages */
-.chat-message-user {
+.chat-message {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     color: #333333;
     font-size: 16px;
-    border-left: 3px solid #4CAF50;
     padding-left: 10px;
     margin-bottom: 10px;
 }
 
+.chat-message-user {
+    border-left: 3px solid #4CAF50;
+}
+
 .chat-message-assistant {
-    font-family: 'Helvetica Neue', Arial, sans-serif;
-    color: #333333;
-    font-size: 16px;
     border-left: 3px solid #007BFF;
-    padding-left: 10px;
     margin-bottom: 50px;
 }
 
