@@ -40,3 +40,16 @@ def setup_logging():
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[logging.StreamHandler()],
     )
+
+
+def read_and_format_json(filepath: str) -> str:
+    """Reads a JSON file and returns it as a prettily formatted string."""
+    try:
+        with open(filepath, "r") as file:
+            data = json.load(file)
+        formatted_json = json.dumps(data, indent=4)  # Pretty print the JSON
+        return formatted_json
+    except FileNotFoundError:
+        return "{}"  # Return an empty JSON object as fallback
+    except json.JSONDecodeError:
+        return "{}"  # Return an empty JSON object as fallback

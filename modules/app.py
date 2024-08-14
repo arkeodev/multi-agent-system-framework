@@ -9,25 +9,25 @@ from modules.execution import execute_scenario
 from modules.rag import load_vectorstore, setup_rag_chain
 from modules.supervisor import create_team_supervisor
 from modules.tools import RagTool
-from modules.utils import load_agent_config
 
 
 class App:
-    def __init__(self, llm: Any, recursion_limit: int):
-        logging.info("Initializing the App")
+    def __init__(self, llm: Any, recursion_limit: int, config: dict):
+        logging.info("Initializing the App with custom configuration")
         self.llm = llm
         self.recursion_limit = recursion_limit
-        self.agent_config = load_agent_config()
+        logging.info(f"config is: {config["supervisor_prompts"]}")
+        self.agent_config = config
         self.vector_index_path = "vector_index.faiss"
 
-    def setup_and_run_scenario(self, scenario: str, recursion_limit: int) -> List[str]:
+    def setup_and_run_scenario(self, recursion_limit: int) -> List[str]:
         """Set up agents, create the supervisor, and run the given scenario."""
         logging.info("Setting up and running scenario")
         agents = self.setup_agents()
         agent_dict = {agent.role_name: agent.agent for agent in agents}
         supervisor_agent = self.create_supervisor()
         messages = execute_scenario(
-            scenario, agent_dict, supervisor_agent, recursion_limit
+            self.agent_config, agent_dict, supervisor_agent, recursion_limit
         )
         return messages
 
@@ -38,19 +38,18 @@ class App:
             rag_chain = load_vectorstore(self.vector_index_path, self.llm)
         else:
             rag_chain = setup_rag_chain(
-                self.agent_config["document_urls"],
+                self.agent_config["scenario_source_documents"],
                 self.llm,
                 self.vector_index_path,
             )
         rag_tool = RagTool(rag_chain=rag_chain)
-        agents: List[AgentModel] = create_agents(self.llm, [rag_tool])
+        agents: List[AgentModel] = create_agents(
+            self.llm, [rag_tool], self.agent_config
+        )
         return agents
 
     def create_supervisor(self) -> Any:
         """Create and return a supervisor agent configured with system prompts and members.`"""
-        logging.info("Creating supervisor agent")
-        return create_team_supervisor(
-            self.llm,
-            self.agent_config["supervisor_prompts"]["initial"],
-            self.agent_config["members"],
-        )
+        team_supervisor = create_team_supervisor(self.llm, self.agent_config)
+        logging.info("Supervisor agent is created")
+        return team_supervisor

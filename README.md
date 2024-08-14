@@ -48,33 +48,31 @@ Modify the `config.json` file for general settings like models and document load
 Here's an example of configuring a scenario for a disaster response team:
 ```json
 {
-  "supervisor_prompts": {
-    "initial": "You are the supervisor of a disaster response team. Direct the team's actions or decide to conclude the operations.",
-    "decision": "Who should act next? Or should we conclude operations? Select one of: {options}"
-  },
-  "members": [
-    "Commander",
-    "Logistics Officer",
-    "Field Agent"
-  ],
-  "roles": [
-    {
-      "name": "Commander",
-      "prompt": "You are the Commander. Your role is to oversee the operation and make strategic decisions."
+    "supervisor_prompts": {
+        "initial": "You are the Mission Coordinator managing an X-ray astronomy crew. Your task is to oversee the study of the Virgo Cluster using the LEIA X-ray imager. Direct who acts next or FINISH when done.",
+        "decision": "Who should act next? Or should we FINISH? Choose from: {options}"
     },
-    {
-      "name": "Logistics Officer",
-      "prompt": "You are the Logistics Officer. Manage resources and ensure all logistical needs are met."
-    },
-    {
-      "name": "Field Agent",
-      "prompt": "You are the Field Agent. Assess the situation on the ground and provide updates to the team."
-    }
-  ],
-  "document_urls": [
-    "https://example.com/emergency_protocol.pdf"
-  ],
-  "scenario": "Disaster Response Scenario: A major earthquake has hit the urban area of Metropolis. Buildings are damaged, and there are numerous injuries. The team's mission includes: \n1. Assessment of the situation on the ground. \n2. Coordination of rescue and medical teams. \n3. Distribution of supplies and resources.\nExecute the mission with each team member performing their designated roles."
+    "members": [
+        "Data Analyst",
+        "Observation Specialist",
+        "Imaging Scientist"
+    ],
+    "roles": [
+        {
+            "name": "Data Analyst",
+            "prompt": "You are a Data Analyst. Your role is to process and analyze the telemetry and spectral data received from the LEIA observations. Interpret findings in relation to the known characteristics of the Virgo Cluster."
+        },
+        {
+            "name": "Observation Specialist",
+            "prompt": "You are the Observation Specialist. Manage the observation schedules and ensure the telescope's alignment and calibration are optimized for capturing high-quality X-ray images of the Virgo Cluster."
+        },
+        {
+            "name": "Imaging Scientist",
+            "prompt": "You are an Imaging Scientist. Your task is to process the images captured by LEIA, correct for any distortions or anomalies, and prepare the data for detailed analysis by the Data Analyst."
+        }
+    ],
+    "scenario_source_documents": ["https://arxiv.org/pdf/2408.00026"],
+    "scenario": "Mission Brief: Virgo Cluster X-ray Study\nThe mission involves using the LEIA X-ray imager to conduct detailed observations of the Virgo Cluster. Your team consists of a Data Analyst, Observation Specialist, and Imaging Scientist.\nObjectives:\n1. Align and calibrate the LEIA telescope to begin observations of the Virgo Cluster.\n2. Capture and process X-ray images, identifying key features and anomalies.\n3. Analyze the spectral and imaging data to provide insights into the cluster's composition and dynamics.\nExecute the mission, with each crew member performing their specific roles."
 }
 ```
 
