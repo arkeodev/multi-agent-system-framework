@@ -2,6 +2,7 @@
 
 import os
 
+import pydantic
 import streamlit as st
 from langchain_openai import ChatOpenAI
 
@@ -28,15 +29,15 @@ def main():
     with right_column:
         scenario = display_scenario()
 
-    llm = ChatOpenAI(
-        model=model_choice, api_key=api_key
-    )  # Ensure API key is correctly used
-    app = App(llm, recursion_limit)
-
     # Trigger scenario execution
     if st.button("Run Scenario"):
-        messages = app.setup_and_run_scenario(scenario, recursion_limit)
-        st.write("\n".join(messages))
+        try:
+            llm = ChatOpenAI(model=model_choice, api_key=api_key)
+            app = App(llm, recursion_limit)
+            messages = app.setup_and_run_scenario(scenario, recursion_limit)
+            st.write("\n".join(messages))
+        except pydantic.v1.error_wrappers.ValidationError as e:
+            st.error(f"Please enter a valid API key: {str(e)}")
 
 
 def display_ui() -> tuple:
