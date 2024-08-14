@@ -2,11 +2,9 @@
 
 import json
 import logging
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-from modules.utils import load_agent_config
 
 
 def create_team_supervisor(llm: Any, agent_config: Dict) -> Callable:
