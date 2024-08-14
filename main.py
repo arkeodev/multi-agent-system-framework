@@ -7,12 +7,8 @@ import streamlit as st
 from langchain_openai import ChatOpenAI
 
 from modules.app import App
-from modules.utils import (
-    load_agent_config,
-    load_configuration,
-    set_api_keys,
-    setup_logging,
-)
+from modules.utils import (load_agent_config, load_configuration, set_api_keys,
+                           setup_logging)
 
 
 def main():
@@ -24,7 +20,7 @@ def main():
     left_column, _, right_column = st.columns([1, 0.1, 2.6])
 
     with left_column:
-        model_choice, api_key, recursion_limit = display_ui()
+        model_choice, recursion_limit = display_ui()
 
     with right_column:
         scenario = display_scenario()
@@ -32,7 +28,8 @@ def main():
     # Trigger scenario execution
     if st.button("Run Scenario"):
         try:
-            llm = ChatOpenAI(model=model_choice, api_key=api_key)
+            # logging.info(f"API Key: {api_key}")
+            llm = ChatOpenAI(model=model_choice)
             app = App(llm, recursion_limit)
             messages = app.setup_and_run_scenario(scenario, recursion_limit)
             st.write("\n".join(messages))
@@ -45,17 +42,21 @@ def display_ui() -> tuple:
     config = load_configuration()
 
     if not os.path.exists(".env"):
-        api_key = st.text_input("Enter your OpenAI API Key:")
+        api_key = st.text_input(
+            label="Enter your OpenAI API Key:",
+            type="password",
+            placeholder="sk-------------",
+        )
+        os.environ["OPENAI_API_KEY"] = api_key
     else:
         set_api_keys()
-        api_key = os.getenv("OPENAI_API_KEY")
 
     model_choice = st.selectbox("Select the model to use:", config["models"], index=0)
     recursion_limit = st.number_input(
         "Set Recursion Limit:", min_value=10, max_value=100, value=25
     )
 
-    return model_choice, api_key, recursion_limit
+    return model_choice, recursion_limit
 
 
 def display_scenario() -> str:
