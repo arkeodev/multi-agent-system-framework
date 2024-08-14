@@ -34,6 +34,8 @@ def main():
         validate_and_parse_json(config_json) if config_json else load_agent_config()
     )
 
+    message_placeholder = st.empty()  # Placeholder for dynamic message updates
+
     if st.button("Run Scenario"):
         if user_config:
             try:
@@ -43,8 +45,9 @@ def main():
                     recursion_limit=recursion_limit,
                     config=user_config.model_dump(),
                 )
-                messages = app.setup_and_run_scenario(recursion_limit)
-                st.write("\n".join(messages))
+                messages = app.setup_and_run_scenario(
+                    recursion_limit, message_placeholder
+                )  # Pass the placeholder
             except Exception as e:
                 st.error(f"Error running the scenario: {str(e)}")
         else:

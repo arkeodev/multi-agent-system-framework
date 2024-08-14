@@ -16,20 +16,24 @@ class App:
         logging.info("Initializing the App with custom configuration")
         self.llm = llm
         self.recursion_limit = recursion_limit
-        logging.info(f"config is: {config["supervisor_prompts"]}")
         self.agent_config = config
         self.vector_index_path = "vector_index.faiss"
 
-    def setup_and_run_scenario(self, recursion_limit: int) -> List[str]:
-        """Set up agents, create the supervisor, and run the given scenario."""
+    def setup_and_run_scenario(self, recursion_limit: int, message_placeholder) -> None:
+        """Set up agents, create the supervisor, and run the given scenario while updating the Streamlit UI."""
         logging.info("Setting up and running scenario")
         agents = self.setup_agents()
         agent_dict = {agent.role_name: agent.agent for agent in agents}
         supervisor_agent = self.create_supervisor()
-        messages = execute_scenario(
+        messages = []
+
+        for message in execute_scenario(
             self.agent_config, agent_dict, supervisor_agent, recursion_limit
-        )
-        return messages
+        ):
+            messages.append(message)
+            message_placeholder.write(
+                "\n".join(messages)
+            )  # Update the placeholder with current messages
 
     def setup_agents(self) -> List[AgentModel]:
         """Set up the agents using the RAG tool chain."""
