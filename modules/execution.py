@@ -1,7 +1,7 @@
 # execution.py
 
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from langchain.agents import AgentExecutor
 from langchain_core.runnables.config import RunnableConfig
@@ -15,8 +15,8 @@ def execute_scenario(
     agent_dict: Dict[str, AgentExecutor],
     supervisor_agent: Any,
     recursion_limit: int,
-) -> List[str]:
-    """Executes the scenario within a constructed graph, handling agent interactions and supervisor decisions."""
+):
+    """Executes the scenario within a constructed graph, handling agent interactions and supervisor decisions, yielding messages incrementally."""
     # Initial state setup with the first message being the scenario description.
     state = {"messages": [agent_config["scenario"]], "next": "supervisor"}
 
@@ -34,6 +34,10 @@ def execute_scenario(
         for output in app.stream(input=state, config=config):
             for key, value in output.items():
                 logging.debug(f"Node '{key}': {value}")
+                if "messages" in value:
+                    # Yield each new message as it comes
+                    for message in value["messages"]:
+                        yield message
                 result = value
     except GraphRecursionError:
         # Log error if the recursion limit is reached during graph execution.
@@ -43,13 +47,11 @@ def execute_scenario(
 
     logging.info(f"Result after invoke: {result}")
 
-    message_list = []
-    # Aggregate messages from the results.
-    if result and "messages" in result:
-        message_list.extend(result["messages"])
-
     # Update the state based on the result from the graph.
     if result and "next" in result and result["next"] != state["next"]:
         state["next"] = result["next"]
 
-    return message_list
+    # This end yield ensures any remaining messages are sent after the loop
+    if result and "messages" in result:
+        for message in result["messages"]:
+            yield message
