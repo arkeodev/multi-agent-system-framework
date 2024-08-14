@@ -11,14 +11,14 @@ from modules.graph import create_graph
 
 
 def execute_scenario(
-    scenario: str,
+    agent_config: Dict,
     agent_dict: Dict[str, AgentExecutor],
     supervisor_agent: Any,
     recursion_limit: int,
 ) -> List[str]:
     """Executes the scenario within a constructed graph, handling agent interactions and supervisor decisions."""
     # Initial state setup with the first message being the scenario description.
-    state = {"messages": [scenario], "next": "supervisor"}
+    state = {"messages": [agent_config["scenario"]], "next": "supervisor"}
 
     # Configuration for the runnable graph, including recursion limit.
     config = RunnableConfig(recursion_limit=recursion_limit)
@@ -33,7 +33,7 @@ def execute_scenario(
         # Stream outputs from the graph execution.
         for output in app.stream(input=state, config=config):
             for key, value in output.items():
-                logging.info(f"Node '{key}': {value}")
+                logging.debug(f"Node '{key}': {value}")
                 result = value
     except GraphRecursionError:
         # Log error if the recursion limit is reached during graph execution.

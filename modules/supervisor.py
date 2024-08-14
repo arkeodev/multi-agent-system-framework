@@ -2,19 +2,15 @@
 
 import json
 import logging
-from typing import Any, Callable, List
+from typing import Any, Callable, Dict
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from modules.utils import load_agent_config
 
-
-def create_team_supervisor(
-    llm: Any, system_prompt: str, members: List[str]
-) -> Callable:
+def create_team_supervisor(llm: Any, agent_config: Dict) -> Callable:
     """Create a supervisor agent to manage the team dynamically based on a specified prompt and team members."""
     # List of options that the supervisor can choose from, including the possibility to end the session
-    options = ["FINISH"] + members
+    options = ["FINISH"] + agent_config["members"]
 
     # Function definition for routing between agents
     function_def = {
@@ -34,10 +30,12 @@ def create_team_supervisor(
     }
 
     # Define the prompt and create the supervisor agent
-    agent_config = load_agent_config()
     prompt = ChatPromptTemplate.from_messages(
         [
-            ("system", system_prompt),
+            (
+                "system",
+                agent_config["supervisor_prompts"]["initial"],
+            ),
             MessagesPlaceholder(variable_name="messages"),
             (
                 "system",

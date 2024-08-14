@@ -1,5 +1,5 @@
 {
-  "models": ["gpt-4o", "gpt-4o-mini"],
+  "models": ["gpt-4o-mini", "gpt-4o"],
   "embedding_model": "text-embedding-3-small",
   "document_loaders": {
     "pdf": "PyMuPDFLoader",
