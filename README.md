@@ -1,4 +1,8 @@
-# Multi-Agent System Framework
+# Multi-agent Omni LangGraph Executer (m o l e)
+
+<div style="text-align: center;">
+  <img src="images/mole.png" alt="MOLE" width="150" height="150">
+</div>
 
 This project implements a multi-agent system framework using Streamlit, LangChain, and LangGraph designed to facilitate complex tasks by coordinating multiple agents. The framework is highly modular, allowing for easy integration and swapping of components such as models, document loaders, and agent roles based on specific scenarios.
 

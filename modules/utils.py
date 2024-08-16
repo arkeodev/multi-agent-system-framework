@@ -43,17 +43,20 @@ def setup_logging():
     )
 
 
-def read_and_format_json(filepath: str) -> str:
-    """Reads a JSON file and returns it as a prettily formatted string."""
+def read_json(filepath: str) -> dict:
+    """Reads a JSON file and returns it as a dictionary."""
     try:
         with open(filepath, "r") as file:
-            data = json.load(file)
-        formatted_json = json.dumps(data, indent=4)  # Pretty print the JSON
-        return formatted_json
+            return json.load(file)
     except FileNotFoundError:
-        return "{}"  # Return an empty JSON object as fallback
+        return {}  # Return an empty dictionary as fallback
     except json.JSONDecodeError:
-        return "{}"  # Return an empty JSON object as fallback
+        return {}  # Return an empty dictionary as fallback
+
+
+def format_json(data: dict) -> str:
+    """Takes a dictionary and returns it as a prettily formatted JSON string."""
+    return json.dumps(data, indent=4)  # Pretty print the JSON
 
 
 def save_uploaded_file(uploaded_file, save_dir="/tmp"):

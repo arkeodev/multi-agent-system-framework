@@ -28,8 +28,6 @@ def setup_rag_chain(
 
         embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
         vectorstore = FAISS.from_documents(splits, embedding_model)
-        vectorstore.save_local(vector_index_path)
-
         retriever = vectorstore.as_retriever()
         rag_prompt = ChatPromptTemplate.from_template(
             "Context: {context}\n\nQuery: {question}\n\nUse the context to answer the query. If you can't answer, say you don't know."
@@ -47,30 +45,3 @@ def setup_rag_chain(
         return rag_chain
     else:
         raise ValueError("No documents were loaded, RAG chain setup cannot proceed.")
-
-
-def load_vectorstore(vector_index_path: str, llm: ChatOpenAI) -> Any:
-    """Load the vector store from a file and set up a RAG chain for retrieval and answering."""
-    logging.info(f"Loading vector store from: {vector_index_path}")
-    embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
-    vectorstore = FAISS.load_local(
-        vector_index_path,
-        embeddings=embedding_model,
-        allow_dangerous_deserialization=True,
-    )
-
-    retriever = vectorstore.as_retriever()
-    rag_prompt = ChatPromptTemplate.from_template(
-        "Context: {context}\n\nQuery: {question}\n\nUse the context to answer the query. If you can't answer, say you don't know."
-    )
-    rag_chain = (
-        {
-            "context": itemgetter("question") | retriever,
-            "question": itemgetter("question"),
-        }
-        | rag_prompt
-        | llm
-        | StrOutputParser()
-    )
-    logging.info("Vector store loaded and RAG chain setup complete")
-    return rag_chain

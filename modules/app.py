@@ -7,7 +7,7 @@ from typing import Any, List, Optional
 from modules.agent import AgentModel, create_agents
 from modules.config.config import FileUploadConfig, URLConfig
 from modules.execution import execute_scenario
-from modules.rag import load_vectorstore, setup_rag_chain
+from modules.rag import setup_rag_chain
 from modules.supervisor import create_team_supervisor
 from modules.tools import RagTool
 
@@ -25,8 +25,8 @@ class App:
         self.recursion_limit = recursion_limit
         self.agent_config = agent_config
         self.vector_index_path = "vector_index.faiss"
-        self.file_config = file_config or FileUploadConfig()
-        self.url_config = url_config or URLConfig()
+        self.file_config = file_config
+        self.url_config = url_config
 
     def setup_and_run_scenario(self, recursion_limit: int, message_placeholder) -> None:
         """Set up agents, create the supervisor, and run the given scenario while updating the Streamlit UI."""
@@ -47,14 +47,11 @@ class App:
     def setup_agents(self) -> List[AgentModel]:
         """Set up the agents using the RAG tool chain."""
         logging.info("Setting up agents")
-        if os.path.exists(self.vector_index_path):
-            rag_chain = load_vectorstore(self.vector_index_path, self.llm)
-        else:
-            rag_chain = setup_rag_chain(
-                self.file_config.files,
-                self.llm,
-                self.vector_index_path,
-            )
+        rag_chain = setup_rag_chain(
+            self.file_config.files,
+            self.llm,
+            self.vector_index_path,
+        )
         rag_tool = RagTool(rag_chain=rag_chain)
         agents: List[AgentModel] = create_agents(
             self.llm, [rag_tool], self.agent_config

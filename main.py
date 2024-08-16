@@ -1,6 +1,5 @@
 # main.py
 
-import logging
 import os
 from typing import Optional
 
@@ -10,9 +9,14 @@ from pydantic import ValidationError
 
 from modules.app import App
 from modules.config.config import AgentConfig, FileUploadConfig, URLConfig
+from modules.scenario_generator import (
+    generate_scenario_config,
+    load_documents_for_scenario,
+)
 from modules.utils import (
+    format_json,
     load_agent_config,
-    read_and_format_json,
+    read_json,
     save_uploaded_file,
     set_api_keys,
     setup_logging,
@@ -21,34 +25,82 @@ from modules.utils import (
 
 def main():
     """Main function to set up the Streamlit application layout and handle user interactions."""
-    st.set_page_config(layout="wide")
-    load_css()
+    setup_page()
+    configure_session_state()
 
-    left_column, _, right_column = st.columns([1.1, 0.1, 1.9])
-
-    st.session_state.file_upload_config, st.session_state.url_config = None, None
+    left_column, _, right_column = create_columns()
 
     with left_column:
-        display_title()
-        model_choice, recursion_limit = display_ui()
-        st.session_state.file_upload_config = handle_file_uploads()
-        logging.info(f"Uploaded files are: {st.session_state.file_upload_config}")
-        st.session_state.url_config = handle_url_input()
-        if (
-            st.session_state.file_upload_config is None
-            and st.session_state.url_config is None
-        ):
-            st.warning("Either a scenario file or scenario URL should be provided!")
+        setup_left_column_content()
 
     with right_column:
         agent_config = display_scenario()
 
-    message_placeholder = st.empty()  # Placeholder for streaming scenario results
+    handle_run_scenario_button(agent_config)
+
+
+def setup_page():
+    """Sets up the Streamlit page configuration and loads custom CSS."""
+    st.set_page_config(layout="wide")
+    load_css()
+
+
+def configure_session_state():
+    """Initializes session state variables for file uploads and URL configurations."""
+    st.session_state.file_upload_config = None
+    st.session_state.url_config = None
+
+
+def create_columns():
+    """Creates the layout columns for the page."""
+    return st.columns([1.1, 0.1, 1.9])
+
+
+def setup_left_column_content():
+    """Sets up the content for the left column, including model selection, file uploads, and URL input."""
+    display_title()
+    model_choice, recursion_limit = display_ui()
+
+    st.session_state.file_upload_config = handle_file_uploads()
+    st.session_state.url_config = handle_url_input()
+
+    check_for_inputs()
+
+    if st.button("Generate Scenario Config"):
+        handle_generate_scenario_config(model_choice)
+
+
+def check_for_inputs():
+    """Checks whether a scenario file or URL has been provided, and warns the user if not."""
+    if not st.session_state.file_upload_config and not st.session_state.url_config:
+        st.warning("Either a scenario file or scenario URL should be provided!")
+
+
+def handle_generate_scenario_config(model_choice):
+    """Generates a scenario configuration based on uploaded files or URL content."""
+    if not st.session_state.file_upload_config and not st.session_state.url_config:
+        st.error(
+            "Please upload a file or provide a URL to generate the scenario config."
+        )
+        return
+
+    llm = ChatOpenAI(model=model_choice)
+    documents = load_documents_for_scenario(
+        st.session_state.file_upload_config, st.session_state.url_config
+    )
+    st.session_state.generated_scenario_config = generate_scenario_config(
+        llm, documents
+    )
+
+
+def handle_run_scenario_button(agent_config):
+    """Handles the action for the 'Run Scenario' button."""
+    message_placeholder = st.empty()
 
     if st.button("Run Scenario", help="Click to run the scenario"):
         run_scenario(
-            model_choice,
-            recursion_limit,
+            st.session_state.model_choice,
+            st.session_state.recursion_limit,
             agent_config,
             st.session_state.file_upload_config,
             st.session_state.url_config,
@@ -64,37 +116,55 @@ def run_scenario(
     url_config: Optional[URLConfig],
     message_placeholder,
 ):
-    """Execute the multi-agent scenario using the provided configurations."""
+    """Executes the multi-agent scenario using the provided configurations."""
     user_config = (
         validate_and_parse_json(agent_config) if agent_config else load_agent_config()
     )
 
-    if user_config:
-        try:
-            llm = ChatOpenAI(model=model_choice)
-            app = App(
-                llm=llm,
-                recursion_limit=recursion_limit,
-                agent_config=user_config.model_dump(),
-                file_config=file_upload_config,
-                url_config=url_config,
-            )
-            app.setup_and_run_scenario(recursion_limit, message_placeholder)
-        except Exception as e:
-            st.error(f"Error running the scenario: {str(e)}")
-    else:
+    if not user_config:
         st.error("Configuration is required to run the scenario.")
+        return
+
+    try:
+        llm = ChatOpenAI(model=model_choice)
+        app = App(
+            llm=llm,
+            recursion_limit=recursion_limit,
+            agent_config=user_config.model_dump(),
+            file_config=file_upload_config,
+            url_config=url_config,
+        )
+        app.setup_and_run_scenario(recursion_limit, message_placeholder)
+    except Exception as e:
+        st.error(f"Error running the scenario: {str(e)}")
 
 
 def display_title():
     """Displays the application title and logo."""
     st.markdown("<h1>m o l e</h1>", unsafe_allow_html=True)
     st.image("images/mole.png")
-    st.markdown("<h3>Multi-agent Omni Langraph Executer</h3>", unsafe_allow_html=True)
+    st.markdown("<h3>Multi-agent Omni LangGraph Executer</h3>", unsafe_allow_html=True)
 
 
 def display_ui() -> tuple:
     """Displays the UI elements for model selection and recursion limit input."""
+    ensure_api_key_is_set()
+
+    model_choice = st.selectbox(
+        "Select the model to use:", ["gpt-4o-mini", "gpt-4o"], index=0
+    )
+    recursion_limit = st.number_input(
+        "Set Recursion Limit:", min_value=10, max_value=100, value=25
+    )
+
+    st.session_state.model_choice = model_choice
+    st.session_state.recursion_limit = recursion_limit
+
+    return model_choice, recursion_limit
+
+
+def ensure_api_key_is_set():
+    """Ensures the API key is set either by user input or from an environment file."""
     if not os.path.exists(".env"):
         api_key = st.text_input(
             label="Enter your OpenAI API Key:",
@@ -104,15 +174,6 @@ def display_ui() -> tuple:
         os.environ["OPENAI_API_KEY"] = api_key
     else:
         set_api_keys()
-
-    model_choice = st.selectbox(
-        "Select the model to use:", ["gpt-4o-mini", "gpt-4o"], index=0
-    )
-    recursion_limit = st.number_input(
-        "Set Recursion Limit:", min_value=10, max_value=100, value=25
-    )
-
-    return model_choice, recursion_limit
 
 
 def handle_file_uploads() -> Optional[FileUploadConfig]:
@@ -158,13 +219,20 @@ def handle_url_input() -> Optional[URLConfig]:
 
 def display_scenario() -> str:
     """Displays the text area for entering or editing the JSON configuration."""
-    placeholder_json = read_and_format_json("./modules/config/agent_config.json")
-    config_json = st.text_area(
-        "Configuration JSON (optional)",
-        value="",
-        placeholder=placeholder_json,
-        height=500,
-    )
+    if "generated_scenario_config" in st.session_state:
+        config_json = st.text_area(
+            "Generated Configuration JSON",
+            value=st.session_state.generated_scenario_config,
+            height=500,
+        )
+    else:
+        placeholder_json = format_json(read_json("./modules/config/agent_config.json"))
+        config_json = st.text_area(
+            "Configuration JSON (optional)",
+            value="",
+            placeholder=placeholder_json,
+            height=500,
+        )
 
     return config_json if config_json.strip() else placeholder_json
 
