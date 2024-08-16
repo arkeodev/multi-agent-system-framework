@@ -20,7 +20,7 @@ def agent_node(
 ) -> Dict[str, Any]:
     """Node function for agents to process input and produce output."""
     result = agent.invoke({"messages": state["messages"]})
-    logging.debug(f"{name} output: {result['output']}")
+    logging.info(f"{name} output: {result['output']}")
     new_messages = state["messages"] + [f"{name}: {result['output']}"]
     return {
         "messages": new_messages,
@@ -35,7 +35,7 @@ def supervisor_node(state: Dict[str, Any], supervisor_agent: Any) -> Dict[str, A
 
     # Update the state based on the supervisor's decision
     state["next"] = supervisor_decision.get("next")
-    logging.debug(f"Supervisor decision: {supervisor_decision.get("next")}")
+    logging.info(f"Supervisor decision: {supervisor_decision.get("next")}")
 
     return state
 

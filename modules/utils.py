@@ -2,6 +2,7 @@
 import json
 import logging
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -53,3 +54,26 @@ def read_and_format_json(filepath: str) -> str:
         return "{}"  # Return an empty JSON object as fallback
     except json.JSONDecodeError:
         return "{}"  # Return an empty JSON object as fallback
+
+
+def save_uploaded_file(uploaded_file, save_dir="/tmp"):
+    """
+    Saves an uploaded file to the specified directory and returns the path.
+    Works across Unix, macOS, and Windows.
+
+    Args:
+    uploaded_file: The uploaded file object from Streamlit.
+    save_dir: The directory to save the file. Defaults to '/tmp'.
+
+    Returns:
+    The path of the saved file as a pathlib.Path object.
+    """
+    save_directory = Path(save_dir)
+    save_directory.mkdir(parents=True, exist_ok=True)
+    file_path = save_directory / uploaded_file.name
+
+    # Write the file
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getvalue())
+
+    return file_path
