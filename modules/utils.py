@@ -68,12 +68,16 @@ def save_uploaded_file(uploaded_file, save_dir="/tmp"):
     Returns:
     The path of the saved file as a pathlib.Path object.
     """
-    save_directory = Path(save_dir)
-    save_directory.mkdir(parents=True, exist_ok=True)
-    file_path = save_directory / uploaded_file.name
+    try:
+        save_directory = Path(save_dir)
+        save_directory.mkdir(parents=True, exist_ok=True)
+        file_path = save_directory / uploaded_file.name
 
-    # Write the file
-    with open(file_path, "wb") as f:
-        f.write(uploaded_file.getvalue())
+        # Write the file
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getvalue())
 
-    return file_path
+        return file_path
+    except Exception as e:
+        logging.error(f"Failed to save uploaded file: {str(e)}")
+        raise

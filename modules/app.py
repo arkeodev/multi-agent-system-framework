@@ -18,16 +18,15 @@ class App:
         llm: Any,
         recursion_limit: int,
         agent_config: dict,
-        file_config: Optional[FileUploadConfig],
-        url_config: Optional[URLConfig],
+        file_config: Optional[FileUploadConfig] = None,
+        url_config: Optional[URLConfig] = None,
     ):
-        logging.info("Initializing the App with custom configuration")
         self.llm = llm
         self.recursion_limit = recursion_limit
         self.agent_config = agent_config
         self.vector_index_path = "vector_index.faiss"
-        self.file_config = file_config
-        self.url_config = url_config
+        self.file_config = file_config or FileUploadConfig()
+        self.url_config = url_config or URLConfig()
 
     def setup_and_run_scenario(self, recursion_limit: int, message_placeholder) -> None:
         """Set up agents, create the supervisor, and run the given scenario while updating the Streamlit UI."""

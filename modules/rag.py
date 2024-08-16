@@ -4,7 +4,6 @@ import logging
 from operator import itemgetter
 from typing import Any, List
 
-from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.output_parsers import StrOutputParser

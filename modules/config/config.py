@@ -21,7 +21,7 @@ class AgentConfig(BaseModel):
 
 
 class FileUploadConfig(BaseModel):
-    files: list  # This will be filled with file paths or identifiers
+    files: List[str]  # This will be filled with file paths or identifiers
 
 
 StrippedString = Annotated[str, constr(strip_whitespace=True, min_length=1)]

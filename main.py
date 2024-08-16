@@ -32,7 +32,7 @@ def main():
         display_title()
         model_choice, recursion_limit = display_ui()
         st.session_state.file_upload_config = handle_file_uploads()
-        logging.info(f"Uploading files are: {st.session_state.file_upload_config}")
+        logging.info(f"Uploaded files are: {st.session_state.file_upload_config}")
         st.session_state.url_config = handle_url_input()
         if (
             st.session_state.file_upload_config is None

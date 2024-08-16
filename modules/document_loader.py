@@ -26,7 +26,7 @@ def load_documents(file_paths: List[str]) -> List[Document]:
     docs = []
 
     for file_path in file_paths:
-        logging.info(f"Loading file is: {file_path}")
+        logging.info(f"Loading file: {file_path}")
         try:
             # Determine the file type based on the file extension
             file_type = file_path.split(".")[-1].lower()
@@ -47,6 +47,8 @@ def load_documents(file_paths: List[str]) -> List[Document]:
                 doc.metadata = generate_metadata(doc, file_path)
             docs.extend(loaded_docs)
 
+        except ValueError as ve:
+            logging.error(f"ValueError: {str(ve)}")
         except Exception as e:
             logging.error(f"Failed to load document from {file_path}: {str(e)}")
             continue  # Skip the current file and proceed with the next one
