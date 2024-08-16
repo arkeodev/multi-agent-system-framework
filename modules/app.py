@@ -2,9 +2,10 @@
 
 import logging
 import os
-from typing import Any, List
+from typing import Any, List, Optional
 
 from modules.agent import AgentModel, create_agents
+from modules.config.config import FileUploadConfig, URLConfig
 from modules.execution import execute_scenario
 from modules.rag import load_vectorstore, setup_rag_chain
 from modules.supervisor import create_team_supervisor
@@ -12,12 +13,20 @@ from modules.tools import RagTool
 
 
 class App:
-    def __init__(self, llm: Any, recursion_limit: int, config: dict):
-        logging.info("Initializing the App with custom configuration")
+    def __init__(
+        self,
+        llm: Any,
+        recursion_limit: int,
+        agent_config: dict,
+        file_config: Optional[FileUploadConfig] = None,
+        url_config: Optional[URLConfig] = None,
+    ):
         self.llm = llm
         self.recursion_limit = recursion_limit
-        self.agent_config = config
+        self.agent_config = agent_config
         self.vector_index_path = "vector_index.faiss"
+        self.file_config = file_config or FileUploadConfig()
+        self.url_config = url_config or URLConfig()
 
     def setup_and_run_scenario(self, recursion_limit: int, message_placeholder) -> None:
         """Set up agents, create the supervisor, and run the given scenario while updating the Streamlit UI."""
@@ -42,7 +51,7 @@ class App:
             rag_chain = load_vectorstore(self.vector_index_path, self.llm)
         else:
             rag_chain = setup_rag_chain(
-                self.agent_config["scenario_source_documents"],
+                self.file_config.files,
                 self.llm,
                 self.vector_index_path,
             )

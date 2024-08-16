@@ -9,14 +9,15 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.12, <3.13"
 streamlit = "^1.37.1"
-langchain = "^0.2.12"
-langchain-openai = "^0.1.20"
-langchain-community = "^0.2.11"
-PyMuPDF = "^1.24.9"
-qdrant-client = "^1.10.1"
-langgraph = "^0.2.1"
+langchain = "^0.2.14"
+langchain-openai = "^0.1.21"
+langchain-community = "^0.2.12"
+qdrant-client = "^1.11.0"
+langgraph = "^0.2.4"
 faiss-cpu = "^1.8.0.post1"
 python-dotenv = "^1.0.1"
+crawl4ai = {git = "https://github.com/unclecode/crawl4ai.git", rev = "main"}
+pymupdf = "^1.24.9"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"

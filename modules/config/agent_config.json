@@ -22,6 +22,5 @@
             "prompt": "You are a fully qualified Combat Systems Operator. Speak only as your role."
         }
     ],
-    "scenario_source_documents": ["https://static.e-publishing.af.mil/production/1/af_a1/publication/afh1/afh1.pdf"],
     "scenario": "Mission Brief: Operation Ocean Guardian\nA cargo ship, the SS Meridian, has been missing for 72 hours in the North Atlantic. Your mission is to locate the ship using a P-8 Poseidon aircraft. The crew consists of a Pilot, Copilot, and Combat Systems Operator (CSO).\nObjectives:\n1. Navigate to the last known coordinates of the SS Meridian.\n2. Search for the ship using the aircraft's sensors.\n3. Communicate findings and coordinate with search and rescue teams.\nExecute the mission, with each crew member performing their role."
 }
