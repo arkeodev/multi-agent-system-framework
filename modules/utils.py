@@ -14,8 +14,7 @@ def set_api_keys():
 
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
-        logging.error("API key for OpenAI must be set in the .env file.")
-        raise ValueError("API key for OpenAI must be set in the .env file.")
+        return
     os.environ["OPENAI_API_KEY"] = openai_api_key
     logging.info("API keys loaded successfully.")
 

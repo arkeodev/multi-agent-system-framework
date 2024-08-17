@@ -66,7 +66,7 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
     )
 
     response = llm(prompt)
-    logging.info(f"Generated scenario configuration: {response}")
+    logging.debug(f"Generated scenario configuration: {response}")
 
     # Clean and parse the JSON string
     cleaned_json_string = clean_json_string(response.content)

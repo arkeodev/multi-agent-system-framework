@@ -25,6 +25,7 @@ from modules.utils import (
 def main():
     """Main function to set up the Streamlit application layout and handle user interactions."""
     setup_page()
+    set_api_keys()
     configure_session_state()
 
     left_column, mid_column, right_column = st.columns([0.8, 0.2, 2.0])
@@ -144,14 +145,20 @@ def handle_generate_scenario_config():
 
 def display_left():
     """Displays the UI elements for model selection, recursion limit input, file uploads, and URL input."""
-    ensure_api_key_is_set()
-
     st.markdown("<h1>m o l e</h1>", unsafe_allow_html=True)
     st.markdown("<h5>Multi-agent Omni LangGraph Executer</h5>", unsafe_allow_html=True)
 
     st.session_state.model_choice = st.selectbox(
         "Select the model to use:", ["gpt-4o-mini", "gpt-4o"], index=0
     )
+
+    # Ensure API key is set and create ChatOpenAI object
+    api_key = ensure_api_key_is_set()
+    if api_key:
+        st.session_state.llm = ChatOpenAI(model=st.session_state.model_choice, openai_api_key=api_key)
+    else:
+        st.warning("API key is required to proceed.")
+
     st.session_state.recursion_limit = st.number_input(
         "Set Recursion Limit:", min_value=10, max_value=100, value=25
     )
@@ -159,23 +166,23 @@ def display_left():
     handle_file_uploads()
     st.session_state.url_config = handle_url_input()
 
-    st.session_state.llm = ChatOpenAI(model=st.session_state.model_choice)
-
     if not st.session_state.file_upload_config and not st.session_state.url_config:
         st.warning("Either a scenario file or scenario URL should be provided!")
 
 
 def ensure_api_key_is_set():
     """Ensures the API key is set either by user input or from an environment file."""
-    if not os.path.exists(".env"):
+    if not os.getenv("OPENAI_API_KEY"):  # Check if the key is already in the environment
         api_key = st.text_input(
             label="Enter your OpenAI API Key:",
             type="password",
             placeholder="sk-------------",
         )
-        os.environ["OPENAI_API_KEY"] = api_key
+        if api_key:
+            os.environ["OPENAI_API_KEY"] = api_key  # Set the key in the environment
     else:
-        set_api_keys()
+        api_key = os.getenv("OPENAI_API_KEY")
+    return api_key
 
 
 def handle_file_uploads():
