@@ -7,20 +7,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-def load_configuration():
-    """Load the configuration for models and document loaders."""
-    with open("modules/config/app_config.json", "r") as config_file:
-        config = json.load(config_file)
-    return config
-
-
-def load_agent_config():
-    """Load the configuration for models and document loaders."""
-    with open("modules/config/agent_config.json", "r") as config_file:
-        config = json.load(config_file)
-    return config
-
-
 def set_api_keys():
     """Sets the necessary API keys for OpenAI and other APIs."""
     logging.info("Loading API keys from .env file.")
@@ -63,13 +49,6 @@ def save_uploaded_file(uploaded_file, save_dir="/tmp"):
     """
     Saves an uploaded file to the specified directory and returns the path.
     Works across Unix, macOS, and Windows.
-
-    Args:
-    uploaded_file: The uploaded file object from Streamlit.
-    save_dir: The directory to save the file. Defaults to '/tmp'.
-
-    Returns:
-    The path of the saved file as a pathlib.Path object.
     """
     try:
         save_directory = Path(save_dir)

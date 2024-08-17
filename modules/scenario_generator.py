@@ -13,6 +13,16 @@ from modules.url_handler import scrape_website
 from modules.utils import format_json
 
 
+def clean_json_string(raw_string: str) -> str:
+    """Cleans up the raw string returned by the LLM by removing markdown formatting."""
+    if "```json" in raw_string:
+        # Remove ```json and ``` or any surrounding whitespace
+        cleaned_string = raw_string.split("```json")[-1].split("```")[0].strip()
+    else:
+        cleaned_string = raw_string.strip()
+    return cleaned_string
+
+
 def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
     """Generate a scenario configuration file using the LLM based on the provided documents."""
     logging.info("Generating scenario configuration from documents")
@@ -58,14 +68,18 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
     response = llm(prompt)
     logging.info(f"Generated scenario configuration: {response}")
 
-    raw_json_string = response.content.strip()
-    cleaned_json_string = raw_json_string.strip("```json").strip("```")
+    # Clean and parse the JSON string
+    cleaned_json_string = clean_json_string(response.content)
+    logging.debug(f"Clened json string is: {cleaned_json_string}")
     try:
         json_data = json.loads(cleaned_json_string)
     except json.JSONDecodeError as e:
-        logging.error(f"Failed to decode JSON: {e}")
-        return "{}"  # Return an empty JSON object as fallback
+        logging.error(f"Failed to decode JSON: {e}\nRaw string: {cleaned_json_string}")
+        return "{}"  # Return an empty JSON object as a fallback
+
+    # Format the JSON to be pretty-printed
     formatted_json = format_json(json_data)
+    logging.debug(f"Formatted JSON configuration: {formatted_json}")
     return formatted_json
 
 

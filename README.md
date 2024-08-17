@@ -4,22 +4,23 @@
   <img src="images/mole.png" alt="MOLE" width="150" height="150">
 </div>
 
-This project implements a multi-agent system framework using Streamlit, LangChain, and LangGraph designed to facilitate complex tasks by coordinating multiple agents. The framework is highly modular, allowing for easy integration and swapping of components such as models, document loaders, and agent roles based on specific scenarios.
+This project implements a robust multi-agent system framework leveraging Streamlit, LangChain, and LangGraph to manage and execute complex tasks by coordinating multiple agents. The framework is designed with modularity in mind, allowing for seamless integration and replacement of components such as AI models, document loaders, and agent roles tailored to specific scenarios.
 
 ## Features
 
-- **Modular Architecture**: Swap out AI models, document loaders, and other components effortlessly.
-- **Dynamic Agent Configuration**: Configure agent roles dynamically through a JSON configuration, adapting the application for various scenarios without code changes.
-- **Supervisor Managed Orchestration**: All the management is done by a supervisor agent.
-- **Interactive UI**: Use Streamlit to provide an intuitive interface for inputting scenarios and viewing results.
-- **Configurable Scenarios**: Run custom scenarios by configuring agents and tasks through a user-friendly JSON interface.
-- **Document Processing**: Load and process various document types, and convert them into LangChain's `Document` format with metadata.
-- **Web Scraping**: Scrape websites using SmartGraph, with support for exclusion patterns and maximum page depth to refine the scraping process.
-- **FAISS Integration**: Store processed documents in a FAISS vector store, enabling efficient retrieval for complex queries.
+- **Modular Architecture**: Easily swap AI models, document loaders, and other components to fit your specific needs.
+- **Agent-Based System**: Leverage multiple agents, each with distinct roles, to collaboratively achieve complex objectives.
+- **Dynamic Agent Configuration with Scenario Generator**: Utilize an integrated language model to dynamically generate agent roles and configuration scenarios.
+- **Supervisor-Managed Agent Orchestration**: A supervisor agent manages the orchestration of tasks, ensuring efficient collaboration among agents.
+- **Interactive UI**: Streamlit-based interface for an intuitive experience in defining scenarios and visualizing results.
+- **Customizable Scenarios**: Easily configure agents and their tasks using a user-friendly JSON interface, enabling the execution of tailored scenarios.
+- **Comprehensive Document Processing**: Load and process a variety of document types, converting them into LangChain's `Document` format enriched with metadata.
+- **FAISS Integration**: Store and retrieve processed documents efficiently using FAISS vector storage, enabling rapid responses to complex queries.
 
 ## Prerequisites
 
-Before running the application, ensure you have the following:
+Before running the application, ensure you have the following installed:
+
 - Python 3.12
 - Poetry for dependency management and environment setup
 
@@ -38,10 +39,12 @@ Before running the application, ensure you have the following:
 
 ## Agent Configuration
 
-Modify the `agent_configuration.json` to define agent roles and scenario-specific behaviors dynamically.
+For those who wish to manually create a scenario configuration file, can modify the sample provided below. This sample outlines how to define agent roles and tailor scenarios dynamically.
 
 ### Sample agent_configuration.json
-Here's an example of configuring a scenario for a disaster response team. You can download the scenario file of this configuration file from [this link](https://static.e-publishing.af.mil/production/1/af_a1/publication/afh1/afh1.pdf).
+
+Here’s an example of configuring a scenario for an astronomy research team. The scenario can be downloaded from [this link](https://arxiv.org/pdf/2408.00026).
+
 ```json
 {
     "supervisor_prompts": {
@@ -74,23 +77,25 @@ Here's an example of configuring a scenario for a disaster response team. You ca
 ## Usage
 
 To start the application, activate the Poetry environment and run:
+
 ```bash
 poetry run streamlit run main.py
 ```
-Navigate to the provided URL by Streamlit in your web browser to interact with the application.
+
+Navigate to the URL provided by Streamlit in your web browser to interact with the application.
 
 ## Modules
 
-- **main.py**: The entry point of the application that handles the UI and scenario execution.
-- **agent.py**: Defines the agents and their specific roles.
-- **rag.py**: Handles document loading and the setup of Retrieval-Augmented Generation chains.
-- **supervisor.py**: Manages the coordination among multiple agents.
-- **execution.py**: Orchestrates the running of scenarios using the defined agents.
-- **tools.py**: Contains utility tools used by agents and the RAG chain for document retrieval and processing.
-- **document_loader.py**: Handles loading of documents based on file type, including custom loaders for unsupported types.
-- **smart_graph_handler.py**: Integrates with SmartGraph for scraping data from web URLs, supporting exclusion patterns and page depth constraints.
-- **graph.py**: Constructs and manages the state graph used to coordinate agent interactions dynamically within a scenario.
-
+- **main.py**: The main entry point of the application, handling the UI and scenario execution.
+- **app.py**: Manages the application’s core functionality, including agent setup and scenario execution.
+- **agent.py**: Defines the agents, detailing their roles and responsibilities within a scenario.
+- **rag.py**: Manages document loading and sets up Retrieval-Augmented Generation (RAG) chains for efficient document processing.
+- **supervisor.py**: Coordinates multiple agents by managing their tasks and ensuring smooth execution.
+- **execution.py**: Orchestrates the execution of scenarios, enabling agents to work together seamlessly.
+- **tools.py**: Provides utility tools for agents and the RAG chain, assisting in document retrieval and processing.
+- **document_loader.py**: Loads documents based on their file type, including custom loaders for unsupported types.
+- **scenario_generator.py**: Automatically generates scenario configuration files in JSON format using a provided input file or URL.
+- **graph.py**: Constructs and manages the state graph used to dynamically coordinate agent interactions within a scenario.
 
 ## License
 

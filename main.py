@@ -15,7 +15,6 @@ from modules.scenario_generator import (
 )
 from modules.utils import (
     format_json,
-    load_agent_config,
     read_json,
     save_uploaded_file,
     set_api_keys,
@@ -28,15 +27,62 @@ def main():
     setup_page()
     configure_session_state()
 
-    left_column, _, right_column = create_columns()
+    left_column, mid_column, right_column = st.columns([0.8, 0.2, 2.0])
 
     with left_column:
-        setup_left_column_content()
+        display_left()
+
+    with mid_column:
+        st.image("images/mole.png")
 
     with right_column:
-        agent_config = display_scenario()
+        display_right()
 
-    handle_run_scenario_button(agent_config)
+    # Create a full-width container for the buttons
+    st.markdown("---")  # Add a horizontal line to separate sections
+    with st.container():
+        col1, col2 = st.columns([1, 2])
+
+        with col1:
+            if st.button("Generate Scenario", use_container_width=True):
+                handle_generate_scenario_config()
+
+        with col2:
+            if st.button("Run Scenario", use_container_width=True):
+                handle_run_scenario_button()
+
+
+def handle_run_scenario_button():
+    """Handles the action for the 'Run Scenario' button."""
+    if not check_scenario_input():
+        return
+    elif not check_scenario_config():
+        return
+
+    st.session_state.messages = []  # Clear any previous messages
+    message_placeholder = st.empty()
+    user_config = validate_and_parse_json(st.session_state.config_json)
+
+    if not user_config:
+        st.error("Configuration is required to run the scenario.")
+        return
+
+    try:
+        app = App(
+            llm=st.session_state.llm,
+            recursion_limit=st.session_state.recursion_limit,
+            agent_config=user_config.model_dump(),
+            file_config=st.session_state.file_upload_config,
+            url_config=st.session_state.url_config,
+        )
+
+        # Collect messages from the scenario
+        messages = app.setup_and_run_scenario(
+            st.session_state.recursion_limit, message_placeholder
+        )
+        st.session_state.messages = messages
+    except Exception as e:
+        st.error(f"Error running the scenario: {str(e)}")
 
 
 def setup_page():
@@ -46,121 +92,77 @@ def setup_page():
 
 
 def configure_session_state():
-    """Initializes session state variables for file uploads and URL configurations."""
-    st.session_state.file_upload_config = None
-    st.session_state.url_config = None
+    """Initializes session state variables for file uploads, URL configurations, and others."""
+    session_defaults = {
+        "file_upload_config": None,
+        "url_config": None,
+        "llm": None,
+        "recursion_limit": None,
+        "model_choice": None,
+        "config_json": None,
+        "generated_scenario_config": None,
+        "messages": [],
+    }
+    for key, value in session_defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
 
-def create_columns():
-    """Creates the layout columns for the page."""
-    return st.columns([1.1, 0.1, 1.9])
-
-
-def setup_left_column_content():
-    """Sets up the content for the left column, including model selection, file uploads, and URL input."""
-    display_title()
-    model_choice, recursion_limit = display_ui()
-
-    st.session_state.file_upload_config = handle_file_uploads()
-    st.session_state.url_config = handle_url_input()
-
-    check_for_inputs()
-
-    if st.button("Generate Scenario Config"):
-        handle_generate_scenario_config(model_choice)
-
-
-def check_for_inputs():
-    """Checks whether a scenario file or URL has been provided, and warns the user if not."""
+def check_scenario_input() -> bool:
+    """Checks if either a file or URL has been provided for scenario generation."""
     if not st.session_state.file_upload_config and not st.session_state.url_config:
-        st.warning("Either a scenario file or scenario URL should be provided!")
-
-
-def handle_generate_scenario_config(model_choice):
-    """Generates a scenario configuration based on uploaded files or URL content."""
-    if not st.session_state.file_upload_config and not st.session_state.url_config:
-        st.error(
+        st.warning(
             "Please upload a file or provide a URL to generate the scenario config."
         )
+        return False
+    return True
+
+
+def check_scenario_config() -> bool:
+    """Checks if a scenario configuration exist."""
+    if not st.session_state.config_json:
+        st.warning(
+            "Please provide a configuration file either manually or using the generate button."
+        )
+        return False
+    return True
+
+
+def handle_generate_scenario_config():
+    """Generates a scenario configuration based on uploaded files or URL content."""
+    if not check_scenario_input():
         return
 
-    llm = ChatOpenAI(model=model_choice)
     documents = load_documents_for_scenario(
         st.session_state.file_upload_config, st.session_state.url_config
     )
-    st.session_state.generated_scenario_config = generate_scenario_config(
-        llm, documents
-    )
+    generated_config = generate_scenario_config(st.session_state.llm, documents)
+
+    st.session_state.config_json = generated_config
+    st.rerun()
 
 
-def handle_run_scenario_button(agent_config):
-    """Handles the action for the 'Run Scenario' button."""
-    message_placeholder = st.empty()
-
-    if st.button("Run Scenario", help="Click to run the scenario"):
-        run_scenario(
-            st.session_state.model_choice,
-            st.session_state.recursion_limit,
-            agent_config,
-            st.session_state.file_upload_config,
-            st.session_state.url_config,
-            message_placeholder,
-        )
-
-
-def run_scenario(
-    model_choice: str,
-    recursion_limit: int,
-    agent_config: str,
-    file_upload_config: Optional[FileUploadConfig],
-    url_config: Optional[URLConfig],
-    message_placeholder,
-):
-    """Executes the multi-agent scenario using the provided configurations."""
-    user_config = (
-        validate_and_parse_json(agent_config) if agent_config else load_agent_config()
-    )
-
-    if not user_config:
-        st.error("Configuration is required to run the scenario.")
-        return
-
-    try:
-        llm = ChatOpenAI(model=model_choice)
-        app = App(
-            llm=llm,
-            recursion_limit=recursion_limit,
-            agent_config=user_config.model_dump(),
-            file_config=file_upload_config,
-            url_config=url_config,
-        )
-        app.setup_and_run_scenario(recursion_limit, message_placeholder)
-    except Exception as e:
-        st.error(f"Error running the scenario: {str(e)}")
-
-
-def display_title():
-    """Displays the application title and logo."""
-    st.markdown("<h1>m o l e</h1>", unsafe_allow_html=True)
-    st.image("images/mole.png")
-    st.markdown("<h3>Multi-agent Omni LangGraph Executer</h3>", unsafe_allow_html=True)
-
-
-def display_ui() -> tuple:
-    """Displays the UI elements for model selection and recursion limit input."""
+def display_left():
+    """Displays the UI elements for model selection, recursion limit input, file uploads, and URL input."""
     ensure_api_key_is_set()
 
-    model_choice = st.selectbox(
+    st.markdown("<h1>m o l e</h1>", unsafe_allow_html=True)
+    st.markdown("<h5>Multi-agent Omni LangGraph Executer</h5>", unsafe_allow_html=True)
+
+    st.session_state.model_choice = st.selectbox(
         "Select the model to use:", ["gpt-4o-mini", "gpt-4o"], index=0
     )
-    recursion_limit = st.number_input(
+    st.session_state.recursion_limit = st.number_input(
         "Set Recursion Limit:", min_value=10, max_value=100, value=25
     )
 
-    st.session_state.model_choice = model_choice
-    st.session_state.recursion_limit = recursion_limit
+    handle_file_uploads()
+    st.session_state.url_config = handle_url_input()
 
-    return model_choice, recursion_limit
+    st.session_state.llm = ChatOpenAI(model=st.session_state.model_choice)
+
+    if not st.session_state.file_upload_config and not st.session_state.url_config:
+        st.warning("Either a scenario file or scenario URL should be provided!")
 
 
 def ensure_api_key_is_set():
@@ -176,8 +178,8 @@ def ensure_api_key_is_set():
         set_api_keys()
 
 
-def handle_file_uploads() -> Optional[FileUploadConfig]:
-    """Handles file upload input and returns the configuration for the uploaded files."""
+def handle_file_uploads():
+    """Handles file upload input and updates the session state for uploaded files."""
     enable_files_input = st.checkbox("Enable File Uploads")
     if enable_files_input:
         with st.expander("File Upload Configuration"):
@@ -196,8 +198,7 @@ def handle_file_uploads() -> Optional[FileUploadConfig]:
             )
             if uploaded_files:
                 file_paths = [str(save_uploaded_file(file)) for file in uploaded_files]
-                return FileUploadConfig(files=file_paths)
-    return None
+                st.session_state.file_upload_config = FileUploadConfig(files=file_paths)
 
 
 def handle_url_input() -> Optional[URLConfig]:
@@ -217,24 +218,17 @@ def handle_url_input() -> Optional[URLConfig]:
     return None
 
 
-def display_scenario() -> str:
+def display_right():
     """Displays the text area for entering or editing the JSON configuration."""
-    if "generated_scenario_config" in st.session_state:
-        config_json = st.text_area(
-            "Generated Configuration JSON",
-            value=st.session_state.generated_scenario_config,
-            height=500,
-        )
-    else:
-        placeholder_json = format_json(read_json("./modules/config/agent_config.json"))
-        config_json = st.text_area(
-            "Configuration JSON (optional)",
-            value="",
-            placeholder=placeholder_json,
-            height=500,
-        )
+    placeholder_json = format_json(read_json("./modules/config/sample_agent_config.json"))
 
-    return config_json if config_json.strip() else placeholder_json
+    st.text_area(
+        "Configuration JSON",
+        value=st.session_state.config_json or "",
+        placeholder=placeholder_json,
+        key="generated_config_text_area",
+        height=500,
+    )
 
 
 def validate_and_parse_json(json_input: str) -> Optional[AgentConfig]:
