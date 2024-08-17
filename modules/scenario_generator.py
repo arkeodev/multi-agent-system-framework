@@ -70,7 +70,7 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
 
     # Clean and parse the JSON string
     cleaned_json_string = clean_json_string(response.content)
-    logging.debug(f"Clened json string is: {cleaned_json_string}")
+    logging.debug(f"Cleaned json string is: {cleaned_json_string}")
     try:
         json_data = json.loads(cleaned_json_string)
     except json.JSONDecodeError as e:
