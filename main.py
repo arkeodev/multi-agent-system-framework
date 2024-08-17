@@ -100,6 +100,7 @@ def configure_session_state():
         "llm": None,
         "recursion_limit": None,
         "model_choice": None,
+        "temperature": None,
         "config_json": None,
         "generated_scenario_config": None,
         "messages": [],
@@ -152,10 +153,16 @@ def display_left():
         "Select the model to use:", ["gpt-4o-mini", "gpt-4o"], index=0
     )
 
+    st.session_state.temperature = st.slider("Temperature", 0.0, 1.0, 0.3)
+
     # Ensure API key is set and create ChatOpenAI object
     api_key = ensure_api_key_is_set()
     if api_key:
-        st.session_state.llm = ChatOpenAI(model=st.session_state.model_choice, openai_api_key=api_key)
+        st.session_state.llm = ChatOpenAI(
+            model=st.session_state.model_choice,
+            openai_api_key=api_key,
+            temperature=st.session_state.temperature,
+        )
     else:
         st.warning("API key is required to proceed.")
 
@@ -172,7 +179,9 @@ def display_left():
 
 def ensure_api_key_is_set():
     """Ensures the API key is set either by user input or from an environment file."""
-    if not os.getenv("OPENAI_API_KEY"):  # Check if the key is already in the environment
+    if not os.getenv(
+        "OPENAI_API_KEY"
+    ):  # Check if the key is already in the environment
         api_key = st.text_input(
             label="Enter your OpenAI API Key:",
             type="password",
@@ -227,7 +236,9 @@ def handle_url_input() -> Optional[URLConfig]:
 
 def display_right():
     """Displays the text area for entering or editing the JSON configuration."""
-    placeholder_json = format_json(read_json("./modules/config/sample_agent_config.json"))
+    placeholder_json = format_json(
+        read_json("./modules/config/sample_agent_config.json")
+    )
 
     st.text_area(
         "Configuration JSON",
