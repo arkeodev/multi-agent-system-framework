@@ -7,20 +7,6 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 
-def load_configuration():
-    """Load the configuration for models and document loaders."""
-    with open("modules/config/app_config.json", "r") as config_file:
-        config = json.load(config_file)
-    return config
-
-
-def load_agent_config():
-    """Load the configuration for models and document loaders."""
-    with open("modules/config/agent_config.json", "r") as config_file:
-        config = json.load(config_file)
-    return config
-
-
 def set_api_keys():
     """Sets the necessary API keys for OpenAI and other APIs."""
     logging.info("Loading API keys from .env file.")
@@ -43,30 +29,26 @@ def setup_logging():
     )
 
 
-def read_and_format_json(filepath: str) -> str:
-    """Reads a JSON file and returns it as a prettily formatted string."""
+def read_json(filepath: str) -> dict:
+    """Reads a JSON file and returns it as a dictionary."""
     try:
         with open(filepath, "r") as file:
-            data = json.load(file)
-        formatted_json = json.dumps(data, indent=4)  # Pretty print the JSON
-        return formatted_json
+            return json.load(file)
     except FileNotFoundError:
-        return "{}"  # Return an empty JSON object as fallback
+        return {}  # Return an empty dictionary as fallback
     except json.JSONDecodeError:
-        return "{}"  # Return an empty JSON object as fallback
+        return {}  # Return an empty dictionary as fallback
+
+
+def format_json(data: dict) -> str:
+    """Takes a dictionary and returns it as a prettily formatted JSON string."""
+    return json.dumps(data, indent=4)  # Pretty print the JSON
 
 
 def save_uploaded_file(uploaded_file, save_dir="/tmp"):
     """
     Saves an uploaded file to the specified directory and returns the path.
     Works across Unix, macOS, and Windows.
-
-    Args:
-    uploaded_file: The uploaded file object from Streamlit.
-    save_dir: The directory to save the file. Defaults to '/tmp'.
-
-    Returns:
-    The path of the saved file as a pathlib.Path object.
     """
     try:
         save_directory = Path(save_dir)
