@@ -19,7 +19,6 @@ from modules.utils import (
     read_json,
     save_uploaded_file,
     set_api_keys,
-    setup_langfuse_keys,
     setup_logging,
 )
 

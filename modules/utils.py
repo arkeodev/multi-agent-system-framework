@@ -28,12 +28,6 @@ def setup_langfuse_keys(pk: str, sk: str, host: str) -> CallbackHandler:
     return CallbackHandler(public_key=pk, secret_key=sk, host=host)
 
 
-def setup_langfuse_keys(pk: str, sk: str, host: str):
-    """Sets the necessary API keys to connect to LangFuse environmnet."""
-    langfuse_handler = CallbackHandler(public_key=pk, secret_key=sk, host=host)
-    return langfuse_handler
-
-
 def setup_logging():
     """Sets up logging configuration."""
     logging.basicConfig(
