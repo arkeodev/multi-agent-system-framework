@@ -5,6 +5,7 @@ from typing import Optional
 
 import streamlit as st
 from langchain_openai import ChatOpenAI
+from langfuse.callback import CallbackHandler
 from pydantic import ValidationError
 
 from modules.app import App
@@ -79,7 +80,9 @@ def handle_run_scenario_button():
 
         # Collect messages from the scenario
         messages = app.setup_and_run_scenario(
-            st.session_state.recursion_limit, message_placeholder
+            st.session_state.recursion_limit,
+            message_placeholder,
+            st.session_state.langfuse_handler,
         )
         st.session_state.messages = messages
     except Exception as e:
@@ -104,6 +107,7 @@ def configure_session_state():
         "config_json": None,
         "generated_scenario_config": None,
         "messages": [],
+        "langfuse_handler": None,
     }
     for key, value in session_defaults.items():
         if key not in st.session_state:
@@ -176,12 +180,12 @@ def display_left():
     if not st.session_state.file_upload_config and not st.session_state.url_config:
         st.warning("Either a scenario file or scenario URL should be provided!")
 
+    handle_langfuse_integration()
 
-def ensure_api_key_is_set():
+
+def ensure_api_key_is_set() -> str:
     """Ensures the API key is set either by user input or from an environment file."""
-    if not os.getenv(
-        "OPENAI_API_KEY"
-    ):  # Check if the key is already in the environment
+    if not os.getenv("OPENAI_API_KEY"):
         api_key = st.text_input(
             label="Enter your OpenAI API Key:",
             type="password",
@@ -215,6 +219,58 @@ def handle_file_uploads():
             if uploaded_files:
                 file_paths = [str(save_uploaded_file(file)) for file in uploaded_files]
                 st.session_state.file_upload_config = FileUploadConfig(files=file_paths)
+
+
+def handle_langfuse_integration() -> Optional[CallbackHandler]:
+    """Handles LangFuse integration for LLM operation tracing."""
+    langfuse_enabled = all(
+        os.getenv(key)
+        for key in ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"]
+    )
+
+    if langfuse_enabled:
+        st.warning("LangFuse enabled for LLM operation tracing.")
+        st.session_state.langfuse_handler = CallbackHandler(
+            public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+            secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+            host=os.getenv("LANGFUSE_HOST"),
+        )
+        check_langfuse_connection()
+    else:
+        if st.checkbox("Enable LangFuse Integration"):
+            setup_langfuse_via_ui()
+
+
+def setup_langfuse_via_ui():
+    """Sets up LangFuse via UI input and checks connection."""
+    with st.expander("LangFuse LLM operation tracing"):
+        pk = st.text_input(
+            "Enter your LangFuse Public Key:",
+            type="password",
+            placeholder="pk-------------",
+        )
+        sk = st.text_input(
+            "Enter your LangFuse Secret Key:",
+            type="password",
+            placeholder="sk-------------",
+        )
+        host = st.text_input("Enter your LangFuse Host Name:")
+
+        if pk and sk and host:
+            st.session_state.langfuse_handler = CallbackHandler(
+                public_key=pk, secret_key=sk, host=host
+            )
+            check_langfuse_connection()
+
+
+def check_langfuse_connection():
+    """Checks the connection to the LangFuse server."""
+    if st.button("Test LangFuse Connection"):
+        handler = st.session_state.get("langfuse_handler")
+        if handler and handler.auth_check():
+            st.success("Authenticated and connected successfully to LangFuse server.")
+        else:
+            st.error("Failed to authenticate with LangFuse server.")
 
 
 def handle_url_input() -> Optional[URLConfig]:

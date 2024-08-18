@@ -5,18 +5,27 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from langfuse.callback import CallbackHandler
 
 
 def set_api_keys():
-    """Sets the necessary API keys for OpenAI and other APIs."""
+    """Loads and sets necessary API keys for OpenAI and LangFuse."""
     logging.info("Loading API keys from .env file.")
     load_dotenv()
 
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        return
-    os.environ["OPENAI_API_KEY"] = openai_api_key
-    logging.info("API keys loaded successfully.")
+    if os.getenv("OPENAI_API_KEY"):
+        logging.info("OpenAI API key loaded successfully.")
+
+    if all(
+        os.getenv(key)
+        for key in ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"]
+    ):
+        logging.info("LangFuse API keys loaded successfully.")
+
+
+def setup_langfuse_keys(pk: str, sk: str, host: str) -> CallbackHandler:
+    """Creates a LangFuse CallbackHandler with the provided keys."""
+    return CallbackHandler(public_key=pk, secret_key=sk, host=host)
 
 
 def setup_logging():

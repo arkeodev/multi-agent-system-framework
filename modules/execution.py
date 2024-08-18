@@ -1,10 +1,11 @@
 # execution.py
 
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from langchain.agents import AgentExecutor
 from langchain_core.runnables.config import RunnableConfig
+from langfuse.callback import CallbackHandler
 from langgraph.errors import GraphRecursionError
 
 from modules.graph import create_graph
@@ -15,13 +16,16 @@ def execute_scenario(
     agent_dict: Dict[str, AgentExecutor],
     supervisor_agent: Any,
     recursion_limit: int,
+    langfuse_handler: Optional[CallbackHandler] = None,
 ):
     """Executes the scenario within a constructed graph, handling agent interactions and supervisor decisions, yielding messages incrementally."""
     # Initial state setup with the first message being the scenario description.
     state = {"messages": [agent_config["scenario"]], "next": "supervisor"}
 
     # Configuration for the runnable graph, including recursion limit.
-    config = RunnableConfig(recursion_limit=recursion_limit)
+    config = RunnableConfig(
+        recursion_limit=recursion_limit, callbacks=[langfuse_handler]
+    )
 
     # Compile the graph from the agent dictionary and supervisor.
     app = create_graph(agent_dict, supervisor_agent).compile()

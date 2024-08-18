@@ -3,6 +3,8 @@
 import logging
 from typing import Any, List, Optional
 
+from langfuse.callback import CallbackHandler
+
 from modules.agent import AgentModel, create_agents
 from modules.config.config import FileUploadConfig, URLConfig
 from modules.execution import execute_scenario
@@ -27,7 +29,12 @@ class App:
         self.file_config = file_config
         self.url_config = url_config
 
-    def setup_and_run_scenario(self, recursion_limit: int, message_placeholder) -> None:
+    def setup_and_run_scenario(
+        self,
+        recursion_limit: int,
+        message_placeholder,
+        langfuse_handler: Optional[CallbackHandler],
+    ) -> None:
         """Set up agents, create the supervisor, and run the given scenario while updating the Streamlit UI."""
         logging.info("Setting up and running scenario")
         agents = self.setup_agents()
@@ -36,7 +43,11 @@ class App:
         messages = []
 
         for message in execute_scenario(
-            self.agent_config, agent_dict, supervisor_agent, recursion_limit
+            self.agent_config,
+            agent_dict,
+            supervisor_agent,
+            recursion_limit,
+            langfuse_handler,
         ):
             messages.append(message)
             message_placeholder.write(
