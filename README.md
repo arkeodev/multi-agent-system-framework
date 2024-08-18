@@ -16,6 +16,7 @@ This project implements a robust multi-agent system framework leveraging Streaml
 - **Customizable Scenarios**: Easily configure agents and their tasks using a user-friendly JSON interface, enabling the execution of tailored scenarios.
 - **Comprehensive Document Processing**: Load and process a variety of document types, converting them into LangChain's `Document` format enriched with metadata.
 - **FAISS Integration**: Store and retrieve processed documents efficiently using FAISS vector storage, enabling rapid responses to complex queries.
+- **LangFuse Integration**: Seamlessly trace and monitor LLM operations using LangFuse, either through an `.env` file or direct input of keys via the UI.
 
 ## Prerequisites
 
@@ -96,6 +97,30 @@ Navigate to the URL provided by Streamlit in your web browser to interact with t
 - **document_loader.py**: Loads documents based on their file type, including custom loaders for unsupported types.
 - **scenario_generator.py**: Automatically generates scenario configuration files in JSON format using a provided input file or URL.
 - **graph.py**: Constructs and manages the state graph used to dynamically coordinate agent interactions within a scenario.
+
+## LangFuse Integration
+
+LangFuse is integrated into the framework to allow detailed tracing and monitoring of the LLM operations. You can configure the integration using either a `.env` file or directly through the UI.
+
+### Option 1: .env File
+
+Ensure your `.env` file includes the following variables:
+
+```env
+LANGFUSE_PUBLIC_KEY=your_public_key
+LANGFUSE_SECRET_KEY=your_secret_key
+LANGFUSE_HOST=your_host_url
+```
+
+### Option 2: UI Input
+
+Alternatively, you can enable LangFuse and input the keys directly through the Streamlit UI:
+
+1. Check the "Enable LangFuse" checkbox.
+2. Expand the "LangFuse LLM operation tracing" section.
+3. Input your LangFuse Public Key, Secret Key, and Host Name.
+4. Optionally, test the connection to ensure it's set up correctly.
+
 
 ## License
 

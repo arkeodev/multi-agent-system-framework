@@ -1761,6 +1761,31 @@ files = [
 six = "*"
 
 [[package]]
+name = "langfuse"
+version = "2.43.3"
+description = "A client library for accessing langfuse"
+optional = false
+python-versions = "<4.0,>=3.8.1"
+files = [
+    {file = "langfuse-2.43.3-py3-none-any.whl", hash = "sha256:62a368009dd26f698905321a52929ab4e75996a871f41db2892beb5257ab69d2"},
+    {file = "langfuse-2.43.3.tar.gz", hash = "sha256:046d872d0d0053d02816d5e5a610be0e4ae7ebb69e65d979111fc522be965691"},
+]
+
+[package.dependencies]
+anyio = ">=4.4.0,<5.0.0"
+backoff = ">=1.10.0"
+httpx = ">=0.15.4,<1.0"
+idna = ">=3.7,<4.0"
+packaging = ">=23.2,<24.0"
+pydantic = ">=1.10.7,<3.0"
+wrapt = ">=1.14,<2.0"
+
+[package.extras]
+langchain = ["langchain (>=0.0.309)"]
+llama-index = ["llama-index (>=0.10.12,<2.0.0)"]
+openai = ["openai (>=0.27.8)"]
+
+[[package]]
 name = "langgraph"
 version = "0.2.4"
 description = "Building stateful, multi-actor applications with LLMs"
@@ -2470,13 +2495,13 @@ attrs = ">=19.2.0"
 
 [[package]]
 name = "packaging"
-version = "24.1"
+version = "23.2"
 description = "Core utilities for Python packages"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.7"
 files = [
-    {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
-    {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
+    {file = "packaging-23.2-py3-none-any.whl", hash = "sha256:8c491190033a9af7e1d931d0b5dacc2ef47509b34dd0de67ed209b5203fc88c7"},
+    {file = "packaging-23.2.tar.gz", hash = "sha256:048fb0e9405036518eaaf48a55953c750c11e1a1b68e0dd1a9d62ed0c092cfc5"},
 ]
 
 [[package]]
@@ -4976,4 +5001,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.13"
-content-hash = "ccb24b6b7ecdca3c948075cf8b8a288eeca1ca30211f3f2f3a139b1f7b25d95a"
+content-hash = "da66e634366d19b7b64e98c38116b6b84cbed77f477022d6a09dedb320bef3c8"

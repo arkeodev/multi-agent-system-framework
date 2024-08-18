@@ -20,6 +20,7 @@ crawl4ai = {git = "https://github.com/unclecode/crawl4ai.git", rev = "main"}
 pymupdf = "^1.24.9"
 unstructured = "^0.15.5"
 pypandoc = "^1.13"
+langfuse = "^2.43.3"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
