@@ -30,11 +30,8 @@ class App:
         self.url_config = url_config
 
     def setup_and_run_scenario(
-        self,
-        recursion_limit: int,
-        message_placeholder,
-        langfuse_handler: Optional[CallbackHandler],
-    ) -> None:
+        self, message_placeholder, langfuse_handler: Optional[CallbackHandler]
+    ) -> List[str]:
         """Set up agents, create the supervisor, and run the given scenario while updating the Streamlit UI."""
         logging.info("Setting up and running scenario")
         agents = self.setup_agents()
@@ -46,7 +43,7 @@ class App:
             self.agent_config,
             agent_dict,
             supervisor_agent,
-            recursion_limit,
+            self.recursion_limit,
             langfuse_handler,
         ):
             messages.append(message)
@@ -54,11 +51,13 @@ class App:
                 "\n".join(messages)
             )  # Update the placeholder with current messages
 
+        return messages
+
     def setup_agents(self) -> List[AgentModel]:
         """Set up the agents using the RAG tool chain."""
         logging.info("Setting up agents")
         rag_chain = setup_rag_chain(
-            self.file_config.files,
+            self.file_config.files if self.file_config else [],
             self.llm,
             self.vector_index_path,
         )
@@ -69,7 +68,7 @@ class App:
         return agents
 
     def create_supervisor(self) -> Any:
-        """Create and return a supervisor agent configured with system prompts and members.`"""
+        """Create and return a supervisor agent configured with system prompts and members."""
         team_supervisor = create_team_supervisor(self.llm, self.agent_config)
         logging.info("Supervisor agent is created")
         return team_supervisor
