@@ -1,4 +1,5 @@
-# utils.py
+# utils.py``
+
 import json
 import logging
 import os
@@ -54,16 +55,12 @@ def format_json(data: dict) -> str:
 
 
 def save_uploaded_file(uploaded_file, save_dir="/tmp"):
-    """
-    Saves an uploaded file to the specified directory and returns the path.
-    Works across Unix, macOS, and Windows.
-    """
+    """Saves an uploaded file to the specified directory and returns the path."""
     try:
         save_directory = Path(save_dir)
         save_directory.mkdir(parents=True, exist_ok=True)
         file_path = save_directory / uploaded_file.name
 
-        # Write the file
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getvalue())
 
