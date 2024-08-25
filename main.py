@@ -75,21 +75,18 @@ def display_left():
 def instantiate_llm(config: ModelConfig, api_key: str):
     """Instantiate the language model class based on configuration and model type."""
     try:
+        params = {"model": config.model_name, "temperature": config.temperature}
         if config.model_type == "openai":
-            return config.chat_model_class(
-                model=config.model_name,
-                openai_api_key=api_key,  # Ensure this parameter name matches the expected name in the class constructor
-                temperature=config.temperature,
-            )
+            params["openai_api_key"] = api_key
+            return config.chat_model_class(**params)
         elif config.model_type == "ollama":
-            return config.chat_model_class(
-                model=config.model_name, temperature=config.temperature
-            )
+            return config.chat_model_class(**params)
         else:
             st.error("Selected model configuration is not supported.")
             return None
     except ValidationError as e:
-        st.error(f"Configuration Error: {e}")
+        st.error("Configuration Error: Check your model parameters and types.")
+        st.error(str(e))
         return None
 
 
