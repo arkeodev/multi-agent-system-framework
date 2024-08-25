@@ -1,21 +1,20 @@
 # execution.py
 
 import logging
-from typing import Any, Dict, Generator, Optional
+from typing import Generator, Optional
 
-from langchain.agents import AgentExecutor
 from langchain_core.runnables.config import RunnableConfig
 from langfuse.callback import CallbackHandler
 from langgraph.errors import GraphRecursionError
+from langgraph.graph.state import CompiledStateGraph
 
 from modules.config.config import AGENT_SUPERVISOR
-from modules.graph import AgentState, create_graph
+from modules.graph import AgentState
 
 
-def execute_scenario(
+def execute_graph(
+    graph: CompiledStateGraph,
     scenario: str,
-    agent_dict: Dict[str, AgentExecutor],
-    supervisor_agent: Any,
     recursion_limit: int,
     langfuse_handler: Optional[CallbackHandler] = None,
 ) -> Generator[str, None, None]:
@@ -31,12 +30,10 @@ def execute_scenario(
         recursion_limit=recursion_limit,
         callbacks=[langfuse_handler] if langfuse_handler else [],
     )
-    app = create_graph(agent_dict, supervisor_agent).compile()
-
     logging.debug(f"Initial state before execution: {initial_state}")
     sent_messages = []
     try:
-        for output in app.stream(input=initial_state, config=config):
+        for output in graph.stream(input=initial_state, config=config):
             for key, value in output.items():
                 logging.debug(f"Node '{key}' processed with output: {value}")
                 if "messages" in value:

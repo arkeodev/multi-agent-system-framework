@@ -10,8 +10,6 @@ from langchain.schema import Document
 
 def scrape_website(
     url: str,
-    exclusion_patterns: List[str] = None,
-    max_depth: int = 3,
     use_llm: bool = False,
 ) -> List[Document]:
     """Scrape a website using Crawl4AI with advanced strategies and return the data in LangChain Document format."""
