@@ -73,7 +73,6 @@ def display_left():
 
 
 def instantiate_llm(config: ModelConfig, api_key: str):
-    """Instantiate the language model class based on configuration and model type."""
     try:
         params = {"model": config.model_name, "temperature": config.temperature}
         if config.model_type == "openai":
@@ -155,36 +154,21 @@ def handle_run_scenario_button():
 
 def ensure_api_key_is_set(model_type: str) -> Optional[str]:
     """Ensure that the appropriate API key is set based on the selected model type and return it if needed."""
-    # Mapping of model types to their required API key environment variables
     api_key_env_vars = {
         "openai": "OPENAI_API_KEY",
-        # Add other models here if they require an API key
     }
-
-    # If the model type does not require an API key, return None
     if model_type not in api_key_env_vars:
         return None
-
-    # Get the corresponding environment variable name for the API key
-    env_var_name = api_key_env_vars.get(model_type)
-
-    if not env_var_name:
-        st.error(
-            f"No API key environment variable configured for model type '{model_type}'"
-        )
-        return ""
-
-    # Check if the API key is already set in the environment
+    env_var_name = api_key_env_vars[model_type]
     api_key = os.getenv(env_var_name)
-
-    # If not set, prompt the user to enter it
     if not api_key:
         api_key = st.text_input(
             f"Enter your API Key for {model_type.capitalize()}:", type="password"
         )
         if api_key:
-            os.environ[env_var_name] = api_key  # Set the API key in the environment
-
+            os.environ[env_var_name] = (
+                api_key  # Set the API key in the environment for future use
+            )
     return api_key
 
 
