@@ -58,7 +58,7 @@ class App:
                     last_displayed_message = message
         except Exception as e:
             logging.error(f"Error during scenario execution: {e}")
-            raise RuntimeError(f"Failed to execute scenario due to: {e}")
+            raise RuntimeError(f"Failed to execute scenario due to: {e}") from e
 
         return messages
 
