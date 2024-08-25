@@ -1,7 +1,7 @@
 # agent.py
 
 import logging
-from typing import Dict, List
+from typing import List
 
 from langchain.agents import AgentExecutor, create_openai_functions_agent
 from langchain.pydantic_v1 import BaseModel, validator
@@ -12,14 +12,14 @@ from langchain_openai import ChatOpenAI
 
 
 class AgentModel(BaseModel):
-    """Model representing an agent with a specific role and its executable agent logic."""
+    """Represents an agent with a specific role and its executable logic."""
 
     role_name: str
     agent: Runnable
 
     @validator("role_name", allow_reuse=True)
     def check_role_name(cls, v: str) -> str:
-        """Validate that the role name is not empty."""
+        """Ensure the role name is not empty."""
         if not v:
             raise ValueError("Role name must not be empty")
         return v
@@ -29,17 +29,16 @@ class AgentModel(BaseModel):
 
 
 def create_agents(
-    llm: ChatOpenAI, tools: List[BaseTool], agent_config: Dict
+    llm: ChatOpenAI, tools: List[BaseTool], roles: List[dict]
 ) -> List[AgentModel]:
-    """Create agents for each role defined in the agent configuration."""
+    """Creates agents for each role defined in the configuration."""
     logging.info("Creating agents...")
-
     agents = []
-    for role in agent_config["roles"]:
+    for role in roles:
         try:
             prompt = ChatPromptTemplate.from_messages(
                 [
-                    ("system", role["prompt"]),
+                    ("system", role.get("prompt")),
                     MessagesPlaceholder(variable_name="messages"),
                     MessagesPlaceholder(variable_name="agent_scratchpad"),
                 ]
@@ -48,8 +47,7 @@ def create_agents(
 
             agent = create_openai_functions_agent(llm, tools, prompt)
             agent_model = AgentModel(
-                role_name=role["name"],
-                agent=AgentExecutor(agent=agent, tools=tools),
+                role_name=role["name"], agent=AgentExecutor(agent=agent, tools=tools)
             )
             agents.append(agent_model)
             logging.info(f"Agent setup for {role['name']} completed successfully.")

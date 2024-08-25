@@ -1,61 +1,50 @@
 # execution.py
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Generator, Optional
 
 from langchain.agents import AgentExecutor
 from langchain_core.runnables.config import RunnableConfig
 from langfuse.callback import CallbackHandler
 from langgraph.errors import GraphRecursionError
 
-from modules.graph import create_graph
+from modules.config.config import AGENT_SUPERVISOR
+from modules.graph import AgentState, create_graph
 
 
 def execute_scenario(
-    agent_config: Dict,
+    scenario: str,
     agent_dict: Dict[str, AgentExecutor],
     supervisor_agent: Any,
     recursion_limit: int,
     langfuse_handler: Optional[CallbackHandler] = None,
-):
-    """Executes the scenario within a constructed graph, handling agent interactions and supervisor decisions, yielding messages incrementally."""
-    # Initial state setup with the first message being the scenario description.
-    state = {"messages": [agent_config["scenario"]], "next": "supervisor"}
-
-    # Configuration for the runnable graph, including recursion limit.
+) -> Generator[str, None, None]:
+    """Executes a scenario within a constructed graph, handling agent interactions and supervisor decisions.
+    Yields:
+        str: Messages generated during the scenario execution.
+    """
+    scenario_message = f"# Step 1 - Scenario\n{scenario}"
+    initial_state = AgentState(
+        messages=[scenario_message], next=AGENT_SUPERVISOR, scratchpad=[], step=1
+    )
     config = RunnableConfig(
         recursion_limit=recursion_limit, callbacks=[langfuse_handler]
     )
-
-    # Compile the graph from the agent dictionary and supervisor.
     app = create_graph(agent_dict, supervisor_agent).compile()
 
-    logging.info(f"Current state before invoke: {state}")
-    result = None
+    logging.debug(f"Initial state before execution: {initial_state}")
+    sent_messages = []
 
     try:
-        # Stream outputs from the graph execution.
-        for output in app.stream(input=state, config=config):
+        for output in app.stream(input=initial_state, config=config):
             for key, value in output.items():
-                logging.debug(f"Node '{key}': {value}")
+                logging.debug(f"Node '{key}' processed with output: {value}")
                 if "messages" in value:
-                    # Yield each new message as it comes
                     for message in value["messages"]:
-                        yield message
-                result = value
+                        if message not in sent_messages:
+                            yield message
+                            sent_messages.append(message)
     except GraphRecursionError:
-        # Log error if the recursion limit is reached during graph execution.
         logging.error(
-            "Graph recursion limit reached, adjust the limit in the configuration if needed."
+            "Graph recursion limit reached, consider adjusting the limit in the configuration."
         )
-
-    logging.info(f"Result after invoke: {result}")
-
-    # Update the state based on the result from the graph.
-    if result and "next" in result and result["next"] != state["next"]:
-        state["next"] = result["next"]
-
-    # This end yield ensures any remaining messages are sent after the loop
-    if result and "messages" in result:
-        for message in result["messages"]:
-            yield message

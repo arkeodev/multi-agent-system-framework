@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 from langfuse.callback import CallbackHandler
 
 from modules.agent import AgentModel, create_agents
-from modules.config.config import FileUploadConfig, URLConfig
+from modules.config.config import VECTOR_INDEX_PATH, FileUploadConfig, URLConfig
 from modules.execution import execute_scenario
 from modules.rag import setup_rag_chain
 from modules.supervisor import create_team_supervisor
@@ -22,53 +22,66 @@ class App:
         file_config: Optional[FileUploadConfig] = None,
         url_config: Optional[URLConfig] = None,
     ):
+        """Initializes the application with LLM, configuration and limits."""
         self.llm = llm
         self.recursion_limit = recursion_limit
         self.agent_config = agent_config
-        self.vector_index_path = "vector_index.faiss"
         self.file_config = file_config
         self.url_config = url_config
 
     def setup_and_run_scenario(
         self, message_placeholder, langfuse_handler: Optional[CallbackHandler]
     ) -> List[str]:
-        """Set up agents, create the supervisor, and run the given scenario while updating the Streamlit UI."""
+        """Sets up agents and runs the scenario, processing messages interactively."""
         logging.info("Setting up and running scenario")
         agents = self.setup_agents()
         agent_dict = {agent.role_name: agent.agent for agent in agents}
         supervisor_agent = self.create_supervisor()
         messages = []
 
-        for message in execute_scenario(
-            self.agent_config,
-            agent_dict,
-            supervisor_agent,
-            self.recursion_limit,
-            langfuse_handler,
-        ):
-            messages.append(message)
-            message_placeholder.write(
-                "\n".join(messages)
-            )  # Update the placeholder with current messages
+        last_displayed_message = ""
+        try:
+            for message in execute_scenario(
+                self.agent_config["scenario"],
+                agent_dict,
+                supervisor_agent,
+                self.recursion_limit,
+                langfuse_handler,
+            ):
+                logging.debug(f"Received message: {message}")
+                if message != last_displayed_message:
+                    if messages:
+                        messages.append("\n")
+                    messages.append(message)
+                    # Update the display with each new message and spaces
+                    message_placeholder.write("\n".join(messages))
+                    last_displayed_message = message
+        except Exception as e:
+            logging.error(f"Error during scenario execution: {e}")
+            raise RuntimeError(f"Failed to execute scenario due to: {e}") from e
 
         return messages
 
     def setup_agents(self) -> List[AgentModel]:
-        """Set up the agents using the RAG tool chain."""
+        """Configures agents based on the provided configuration."""
         logging.info("Setting up agents")
         rag_chain = setup_rag_chain(
-            self.file_config.files if self.file_config else [],
+            self.file_config.files,
             self.llm,
-            self.vector_index_path,
+            VECTOR_INDEX_PATH,
         )
         rag_tool = RagTool(rag_chain=rag_chain)
         agents: List[AgentModel] = create_agents(
-            self.llm, [rag_tool], self.agent_config
+            self.llm, [rag_tool], self.agent_config["roles"]
         )
         return agents
 
     def create_supervisor(self) -> Any:
-        """Create and return a supervisor agent configured with system prompts and members."""
-        team_supervisor = create_team_supervisor(self.llm, self.agent_config)
-        logging.info("Supervisor agent is created")
+        """Creates a supervisor agent configured with specific system prompts and member roles."""
+        team_supervisor = create_team_supervisor(
+            self.llm,
+            self.agent_config["members"],
+            self.agent_config["supervisor_prompts"],
+        )
+        logging.info("Supervisor agent created")
         return team_supervisor

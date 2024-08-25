@@ -6,6 +6,12 @@ from langchain_ollama.chat_models import ChatOllama
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, HttpUrl, constr
 
+# Constants
+AGENT_SUPERVISOR = "supervisor"
+VECTOR_INDEX_PATH = "vector_index.faiss"
+ROUTE_NAME = "route"
+FINISH = "FINISH"
+
 
 class Role(BaseModel):
     name: str
