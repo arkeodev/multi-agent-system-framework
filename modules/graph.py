@@ -5,38 +5,79 @@ from functools import partial
 from typing import Any, Dict, List, TypedDict
 
 from langchain.agents import AgentExecutor
+from langchain_core.messages import BaseMessage
 from langgraph.graph import END, StateGraph
+
+from modules.config.config import AGENT_SUPERVISOR
 
 
 class AgentState(TypedDict):
-    """Represents the state of an agent within the graph system, containing messages and tracking the next node."""
+    messages: List[str]
+    next: str
+    scratchpad: List[Dict[str, Any]]
+    step: int
 
-    messages: List[str]  # List of messages exchanged with the agent
-    next: str  # The identifier of the next agent or node to process
+
+def serialize_scratchpad(scratchpad: List[BaseMessage]) -> List[Dict[str, Any]]:
+    """Serializes the scratchpad contents into a list of dictionaries."""
+    serialized_scratchpad = []
+    for message in scratchpad:
+        try:
+            serialized_scratchpad.append(
+                message.dict()
+                if hasattr(message, "dict")
+                else {"content": str(message)}
+            )
+        except Exception as e:
+            logging.warning(
+                f"Failed to serialize scratchpad item: {message}, error: {e}"
+            )
+            serialized_scratchpad.append({"content": "unserializable object"})
+    return serialized_scratchpad
 
 
-def agent_node(
-    state: Dict[str, Any], agent: AgentExecutor, name: str
-) -> Dict[str, Any]:
-    """Node function for agents to process input and produce output."""
-    result = agent.invoke({"messages": state["messages"]})
-    logging.info(f"{name} output: {result['output']}")
-    new_messages = state["messages"] + [f"{name}: {result['output']}"]
-    return {
-        "messages": new_messages,
-        "next": "supervisor",  # Transition control back to the supervisor
+def update_scratchpad(state: AgentState, agent_name: str, output: str) -> AgentState:
+    """Updates the state with the latest agent interaction."""
+    step_info = {"step": state["step"], "agent": agent_name, "output": output}
+    state["scratchpad"].append(step_info)
+    if agent_name == AGENT_SUPERVISOR:
+        state["step"] += 1
+    return state
+
+
+def agent_node(state: AgentState, agent: AgentExecutor, name: str) -> AgentState:
+    """Processes a node in the graph representing an agent."""
+    logging.info(f"Agent Node {name} - Current Step: {state['step']}")
+    dynamic_context = {
+        "messages": state["messages"],
+        "scratchpad": state["scratchpad"][-1] if state["scratchpad"] else None,
+        "step": state["step"],
     }
+    result = agent.invoke(dynamic_context)
+    # Format the message to include the step number and make the agent name look like a markdown heading
+    new_message = f"# Step {state['step']} - {name}\n{result['output']}"
+    if not state["messages"] or state["messages"][-1] != new_message:
+        state["messages"].append(new_message)
+
+    state = update_scratchpad(state, name, result["output"])
+    state["next"] = AGENT_SUPERVISOR
+    return state
 
 
-def supervisor_node(state: Dict[str, Any], supervisor_agent: Any) -> Dict[str, Any]:
-    """Process input from the supervisor to determine the next action."""
-    # Simulate a decision from the supervisor or replace with an actual API call or logic
-    supervisor_decision = supervisor_agent({"messages": state["messages"]})
-
-    # Update the state based on the supervisor's decision
-    state["next"] = supervisor_decision.get("next")
-    logging.info(f"Supervisor decision: {supervisor_decision.get("next")}")
-
+def supervisor_node(state: AgentState, supervisor_agent: Any) -> AgentState:
+    """Directs the graph's flow based on the supervisor's decision."""
+    logging.info(f"Supervisor Node - Current Step: {state.get('step', 'Not Set')}")
+    dynamic_context = {
+        "messages": state["messages"],
+        "scratchpad": state["scratchpad"][-1] if state["scratchpad"] else None,
+        "step": state["step"],
+    }
+    supervisor_decision = supervisor_agent(dynamic_context)
+    selected_agent = supervisor_decision.get("next")
+    state["next"] = selected_agent
+    scratchpad_entry = f"Step {state['step']}: Supervisor selected {selected_agent}."
+    state = update_scratchpad(state, AGENT_SUPERVISOR, scratchpad_entry)
+    logging.info(f"Supervisor decision: {selected_agent}")
     return state
 
 
@@ -46,23 +87,18 @@ def create_graph(
     """Constructs a state graph dynamically based on configured agent roles and transitions."""
     logging.info("Creating state graph...")
     graph = StateGraph(state_schema=AgentState)
-
-    # Add all agents and the supervisor to the graph
     for name, agent in agent_dict.items():
         graph.add_node(name, partial(agent_node, agent=agent, name=name))
     graph.add_node(
-        "supervisor", partial(supervisor_node, supervisor_agent=supervisor_agent)
+        AGENT_SUPERVISOR, partial(supervisor_node, supervisor_agent=supervisor_agent)
     )
-
-    # Set up edges from each agent to the supervisor and conditional edges based on supervisor decisions
     for name in agent_dict:
-        graph.add_edge(name, "supervisor")
+        graph.add_edge(name, AGENT_SUPERVISOR)
     graph.add_conditional_edges(
-        "supervisor",
-        lambda x: x["next"],
+        AGENT_SUPERVISOR,
+        lambda state: state["next"],
         {name: name for name in agent_dict} | {"FINISH": END},
     )
-
-    graph.set_entry_point("supervisor")
+    graph.set_entry_point(AGENT_SUPERVISOR)
     logging.info("Graph setup complete")
     return graph
