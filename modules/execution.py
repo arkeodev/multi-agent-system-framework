@@ -28,13 +28,13 @@ def execute_scenario(
         messages=[scenario_message], next=AGENT_SUPERVISOR, scratchpad=[], step=1
     )
     config = RunnableConfig(
-        recursion_limit=recursion_limit, callbacks=[langfuse_handler]
+        recursion_limit=recursion_limit,
+        callbacks=[langfuse_handler] if langfuse_handler else [],
     )
     app = create_graph(agent_dict, supervisor_agent).compile()
 
     logging.debug(f"Initial state before execution: {initial_state}")
     sent_messages = []
-
     try:
         for output in app.stream(input=initial_state, config=config):
             for key, value in output.items():
