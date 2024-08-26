@@ -1,7 +1,9 @@
+# file_service.py
+
 import streamlit as st
 
 from config.config import FileUploadConfig
-from utilities.utils import save_uploaded_file
+from utilities.file_utils import save_uploaded_file
 
 
 def handle_file_uploads():

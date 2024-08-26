@@ -1,3 +1,5 @@
+# main.py
+
 import streamlit as st
 
 from interfaces.streamlit_interface import layout_streamlit_ui
