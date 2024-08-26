@@ -1,10 +1,10 @@
 # config.py
 
-from typing import Annotated, Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from langchain_ollama.chat_models import ChatOllama
 from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, ConfigDict, HttpUrl, constr
+from pydantic import BaseModel, HttpUrl
 
 # Constants
 AGENT_SUPERVISOR = "supervisor"
