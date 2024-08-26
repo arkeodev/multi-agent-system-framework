@@ -14,33 +14,43 @@ def handle_langfuse_integration():
             for key in ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"]
         ):
             st.warning("LangFuse enabled for LLM operation tracing.")
-            st.session_state.langfuse_handler = CallbackHandler(
-                public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
-                secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
-                host=os.getenv("LANGFUSE_HOST"),
-            )
-        elif st.checkbox("Enable LangFuse Integration"):
+            try:
+                st.session_state.langfuse_handler = CallbackHandler(
+                    public_key=os.getenv("LANGFUSE_PUBLIC_KEY"),
+                    secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
+                    host=os.getenv("LANGFUSE_HOST"),
+                )
+            except Exception as e:
+                st.error(f"Error initializing LangFuse handler: {e}")
+        else:
             setup_langfuse_via_ui()
         check_langfuse_connection()
 
 
 def setup_langfuse_via_ui():
     """Set up LangFuse via UI input and check connection."""
-    with st.expander("LangFuse LLM operation tracing"):
-        pk = st.text_input("Enter your LangFuse Public Key:", type="password")
-        sk = st.text_input("Enter your LangFuse Secret Key:", type="password")
-        host = st.text_input("Enter your LangFuse Host Name:")
-        if pk and sk and host:
+    pk = st.text_input("Enter your LangFuse Public Key:", type="password")
+    sk = st.text_input("Enter your LangFuse Secret Key:", type="password")
+    host = st.text_input("Enter your LangFuse Host Name:")
+    if pk and sk and host:
+        try:
             st.session_state.langfuse_handler = CallbackHandler(
                 public_key=pk, secret_key=sk, host=host
             )
+        except Exception as e:
+            st.error(f"Error initializing LangFuse handler: {e}")
 
 
 def check_langfuse_connection():
     """Check the connection to the LangFuse server."""
     if st.button("Test LangFuse Connection"):
         handler = st.session_state.get("langfuse_handler")
-        if handler and handler.auth_check():
-            st.success("Authenticated and connected successfully to LangFuse server.")
-        else:
-            st.error("Failed to authenticate with LangFuse server.")
+        try:
+            if handler and handler.auth_check():
+                st.success(
+                    "Authenticated and connected successfully to LangFuse server."
+                )
+            else:
+                st.error("Failed to authenticate with LangFuse server.")
+        except Exception as e:
+            st.error(f"Error checking LangFuse connection: {e}")

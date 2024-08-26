@@ -1,5 +1,6 @@
 # config.py
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from langchain_ollama.chat_models import ChatOllama
@@ -11,6 +12,7 @@ AGENT_SUPERVISOR = "supervisor"
 VECTOR_INDEX_PATH = "vector_index.faiss"
 ROUTE_NAME = "route"
 FINISH = "FINISH"
+SAMPLE_AGENT_CONFIG = Path().absolute() / "config" / "sample_agent_config.json"
 
 
 class Role(BaseModel):

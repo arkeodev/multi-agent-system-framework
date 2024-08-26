@@ -30,6 +30,9 @@ def handle_generate_scenario_config():
         st.session_state.file_upload_config, st.session_state.url
     )
     generated_config = generate_scenario_config(st.session_state.llm, documents)
+    if not generated_config:
+        st.error("Failed to generate scenario configuration.")
+        return
     st.session_state.config_json = generated_config
     st.rerun()
 

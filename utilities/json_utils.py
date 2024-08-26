@@ -1,6 +1,7 @@
 # json_utils.py
 
 import json
+import logging
 
 
 def read_json(filepath: str) -> dict:
@@ -9,8 +10,10 @@ def read_json(filepath: str) -> dict:
         with open(filepath, "r") as file:
             return json.load(file)
     except FileNotFoundError:
+        logging.error(f"File not found: {filepath}")
         return {}  # Return an empty dictionary as fallback
     except json.JSONDecodeError:
+        logging.error(f"JSON decode error in file: {filepath}")
         return {}  # Return an empty dictionary as fallback
 
 

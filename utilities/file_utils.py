@@ -6,6 +6,9 @@ from pathlib import Path
 
 def save_uploaded_file(uploaded_file, save_dir="/tmp"):
     """Saves an uploaded file to the specified directory and returns the path."""
+    if not uploaded_file:
+        raise ValueError("No file uploaded")
+
     try:
         save_directory = Path(save_dir)
         save_directory.mkdir(parents=True, exist_ok=True)

@@ -12,13 +12,15 @@ def display_model_config():
     """Configure the left column of the UI for model and input configuration."""
     st.markdown("<h1>m o l e</h1>", unsafe_allow_html=True)
     st.markdown("<h5>Multi-agent Omni LangGraph Executer</h5>", unsafe_allow_html=True)
-
     with st.expander("Model Configuration", expanded=False):
         model_type = st.selectbox("Select model type:", list(model_config_dict.keys()))
         model_name = st.selectbox(
             "Select model:", list(model_config_dict[model_type].keys())
         )
-        selected_model_config = model_config_dict[model_type][model_name]
+        selected_model_config = model_config_dict[model_type].get(model_name)
+        if not selected_model_config:
+            st.error("Selected model configuration not found.")
+            return
         st.session_state.temperature = st.slider(
             "Temperature", 0.0, 1.0, selected_model_config.temperature
         )
