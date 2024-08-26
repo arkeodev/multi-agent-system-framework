@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 
 from config.config import FileUploadConfig
 from services.document_service import load_documents
-from services.url_service import scrape_website
+from services.url_service import WebScraper
 from utilities.json_utils import format_json
 
 
@@ -105,6 +105,7 @@ def load_documents_for_scenario(
         documents.extend(load_documents(file_upload_config.files))
 
     if url:
-        documents.extend(scrape_website(url))
+        web_scraper = WebScraper()
+        documents.extend(web_scraper.scrape_website(url))
 
     return documents

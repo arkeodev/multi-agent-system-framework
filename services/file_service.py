@@ -25,4 +25,4 @@ def handle_file_uploads():
 
 def handle_url() -> str:
     """Handle URL input and return the configuration for the provided URL."""
-    return st.text_input("Enter URL", disabled=True, label_visibility="hidden")
+    return st.text_input("Enter URL", placeholder="Enter URL")
