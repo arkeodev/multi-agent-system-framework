@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from modules.config.config import FINISH, ROUTE_NAME
+from config.config import FINISH, ROUTE_NAME
 
 
 def create_team_supervisor(

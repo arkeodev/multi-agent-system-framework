@@ -8,8 +8,8 @@ from langfuse.callback import CallbackHandler
 from langgraph.errors import GraphRecursionError
 from langgraph.graph.state import CompiledStateGraph
 
-from modules.config.config import AGENT_SUPERVISOR
-from modules.graph import AgentState
+from agents.graph import AgentState
+from config.config import AGENT_SUPERVISOR
 
 
 def execute_graph(
