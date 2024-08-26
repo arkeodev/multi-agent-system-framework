@@ -29,16 +29,14 @@ def handle_langfuse_integration():
 
 def setup_langfuse_via_ui():
     """Set up LangFuse via UI input and check connection."""
-    pk = st.text_input("Enter your LangFuse Public Key:", type="password")
-    sk = st.text_input("Enter your LangFuse Secret Key:", type="password")
-    host = st.text_input("Enter your LangFuse Host Name:")
-    if pk and sk and host:
-        try:
+    with st.expander("LangFuse LLM operation tracing"):
+        pk = st.text_input("Enter your LangFuse Public Key:", type="password")
+        sk = st.text_input("Enter your LangFuse Secret Key:", type="password")
+        host = st.text_input("Enter your LangFuse Host Name:")
+        if pk and sk and host:
             st.session_state.langfuse_handler = CallbackHandler(
                 public_key=pk, secret_key=sk, host=host
             )
-        except Exception as e:
-            st.error(f"Error initializing LangFuse handler: {e}")
 
 
 def check_langfuse_connection():
