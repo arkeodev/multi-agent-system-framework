@@ -6,8 +6,9 @@ from typing import Any, List, Optional
 from langfuse.callback import CallbackHandler
 
 from modules.agent import AgentModel, create_agents
-from modules.config.config import VECTOR_INDEX_PATH, FileUploadConfig, URLConfig
-from modules.execution import execute_scenario
+from modules.config.config import VECTOR_INDEX_PATH, FileUploadConfig
+from modules.execution import execute_graph
+from modules.graph import create_graph
 from modules.rag import setup_rag_chain
 from modules.supervisor import create_team_supervisor
 from modules.tools import RagTool
@@ -20,14 +21,14 @@ class App:
         recursion_limit: int,
         agent_config: dict,
         file_config: Optional[FileUploadConfig] = None,
-        url_config: Optional[URLConfig] = None,
+        url: Optional[str] = None,
     ):
         """Initializes the application with LLM, configuration and limits."""
         self.llm = llm
         self.recursion_limit = recursion_limit
         self.agent_config = agent_config
         self.file_config = file_config
-        self.url_config = url_config
+        self.url = url
 
     def setup_and_run_scenario(
         self, message_placeholder, langfuse_handler: Optional[CallbackHandler]
@@ -40,11 +41,11 @@ class App:
         messages = []
 
         last_displayed_message = ""
+        graph = create_graph(agent_dict, supervisor_agent).compile()
         try:
-            for message in execute_scenario(
+            for message in execute_graph(
+                graph,
                 self.agent_config["scenario"],
-                agent_dict,
-                supervisor_agent,
                 self.recursion_limit,
                 langfuse_handler,
             ):

@@ -7,7 +7,7 @@ from typing import List, Optional
 from langchain.schema import Document
 from langchain_openai import ChatOpenAI
 
-from modules.config.config import FileUploadConfig, URLConfig
+from modules.config.config import FileUploadConfig
 from modules.document_loader import load_documents
 from modules.url_handler import scrape_website
 from modules.utils import format_json
@@ -96,7 +96,7 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
 
 
 def load_documents_for_scenario(
-    file_upload_config: Optional[FileUploadConfig], url_config: Optional[URLConfig]
+    file_upload_config: Optional[FileUploadConfig], url: str
 ) -> List[Document]:
     """Load documents from either file uploads or a URL for scenario generation."""
     documents = []
@@ -104,11 +104,7 @@ def load_documents_for_scenario(
     if file_upload_config:
         documents.extend(load_documents(file_upload_config.files))
 
-    if url_config:
-        documents.extend(
-            scrape_website(
-                url_config.url, [url_config.exclusion_pattern], url_config.max_depth
-            )
-        )
+    if url:
+        documents.extend(scrape_website(url))
 
     return documents

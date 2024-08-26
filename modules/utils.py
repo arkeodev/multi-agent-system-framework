@@ -9,18 +9,17 @@ from dotenv import load_dotenv
 from langfuse.callback import CallbackHandler
 
 
-def set_api_keys():
+def set_api_keys(env_file_path=".env"):
     """Loads and sets necessary API keys for OpenAI and LangFuse."""
-    logging.info("Loading API keys from .env file.")
-    load_dotenv()
+    logging.info("Attempting to load API keys from specified .env file.")
+    load_dotenv(env_file_path)
 
-    if os.getenv("OPENAI_API_KEY"):
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key:
         logging.info("OpenAI API key loaded successfully.")
 
-    if all(
-        os.getenv(key)
-        for key in ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"]
-    ):
+    langfuse_keys = ["LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY", "LANGFUSE_HOST"]
+    if all(os.getenv(key) for key in langfuse_keys):
         logging.info("LangFuse API keys loaded successfully.")
 
 
