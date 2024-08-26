@@ -19,21 +19,20 @@ def handle_langfuse_integration():
                 secret_key=os.getenv("LANGFUSE_SECRET_KEY"),
                 host=os.getenv("LANGFUSE_HOST"),
             )
-        elif st.checkbox("Enable LangFuse Integration"):
+        else:
             setup_langfuse_via_ui()
         check_langfuse_connection()
 
 
 def setup_langfuse_via_ui():
     """Set up LangFuse via UI input and check connection."""
-    with st.expander("LangFuse LLM operation tracing"):
-        pk = st.text_input("Enter your LangFuse Public Key:", type="password")
-        sk = st.text_input("Enter your LangFuse Secret Key:", type="password")
-        host = st.text_input("Enter your LangFuse Host Name:")
-        if pk and sk and host:
-            st.session_state.langfuse_handler = CallbackHandler(
-                public_key=pk, secret_key=sk, host=host
-            )
+    pk = st.text_input("Enter your LangFuse Public Key:", type="password")
+    sk = st.text_input("Enter your LangFuse Secret Key:", type="password")
+    host = st.text_input("Enter your LangFuse Host Name:")
+    if pk and sk and host:
+        st.session_state.langfuse_handler = CallbackHandler(
+            public_key=pk, secret_key=sk, host=host
+        )
 
 
 def check_langfuse_connection():
