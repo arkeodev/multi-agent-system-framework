@@ -11,12 +11,19 @@ from core.app import App
 
 
 def display_buttons():
-    """Display buttons for generating and running scenarios."""
+    """Display buttons for generating, running, and visualizing scenarios."""
     with st.container():
         col1, col2 = st.columns([1, 2])
+
         with col1:
-            if st.button("Generate Agent Configuration", use_container_width=True):
-                handle_generate_scenario_config()
+            col1a, col1b = st.columns([1, 1])
+            with col1a:
+                if st.button("Generate Agent Configuration", use_container_width=True):
+                    handle_generate_scenario_config()
+            with col1b:
+                if st.button("Visualize Graph", use_container_width=True):
+                    handle_visualize_graph_button()
+
         with col2:
             if st.button("Run Scenario", use_container_width=True):
                 handle_run_scenario_button()
@@ -51,13 +58,32 @@ def handle_run_scenario_button():
             agent_config=user_config.model_dump(),
             file_config=st.session_state.file_upload_config,
             url=st.session_state.url,
+            langfuse_handler=st.session_state.langfuse_handler,
         )
-        messages = app.setup_and_run_scenario(
-            message_placeholder, st.session_state.langfuse_handler
-        )
+        messages = app.execute_graph(message_placeholder)  # Pass the placeholder here
         st.session_state.messages = messages
     except Exception as e:
         st.error(f"Error running the scenario: {str(e)}")
+
+
+def handle_visualize_graph_button():
+    """Handle graph visualization."""
+    if not check_scenario_config():
+        return
+    try:
+        user_config = AgentConfig.model_validate_json(st.session_state.config_json)
+        app = App(
+            llm=st.session_state.llm,
+            recursion_limit=st.session_state.recursion_limit,
+            agent_config=user_config.model_dump(),
+            file_config=st.session_state.file_upload_config,
+            url=st.session_state.url,
+            langfuse_handler=st.session_state.langfuse_handler,
+        )
+        graph_image = app.visualise_graph()
+        st.image(graph_image, caption="Scenario Graph Visualization")
+    except Exception as e:
+        st.error(f"Error visualizing the graph: {str(e)}")
 
 
 def check_scenario_input() -> bool:
