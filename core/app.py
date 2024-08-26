@@ -5,13 +5,13 @@ from typing import Any, List, Optional
 
 from langfuse.callback import CallbackHandler
 
-from modules.agent import AgentModel, create_agents
-from modules.config.config import VECTOR_INDEX_PATH, FileUploadConfig
-from modules.execution import execute_graph
-from modules.graph import create_graph
-from modules.rag import setup_rag_chain
-from modules.supervisor import create_team_supervisor
-from modules.tools import RagTool
+from agents.agent import AgentModel, create_agents
+from agents.graph import create_graph
+from agents.rag import setup_rag_chain
+from agents.supervisor import create_team_supervisor
+from agents.tools import RagTool
+from config.config import VECTOR_INDEX_PATH, FileUploadConfig
+from core.execution import execute_graph
 
 
 class App:

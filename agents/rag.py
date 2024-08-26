@@ -10,7 +10,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-from modules.document_loader import load_documents
+from services.document_service import load_documents
 
 
 def setup_rag_chain(

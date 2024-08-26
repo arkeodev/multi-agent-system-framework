@@ -8,7 +8,7 @@ from langchain.agents import AgentExecutor
 from langchain_core.messages import BaseMessage
 from langgraph.graph import END, StateGraph
 
-from modules.config.config import AGENT_SUPERVISOR
+from config.config import AGENT_SUPERVISOR
 
 
 class AgentState(TypedDict):

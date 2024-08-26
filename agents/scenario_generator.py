@@ -7,10 +7,10 @@ from typing import List, Optional
 from langchain.schema import Document
 from langchain_openai import ChatOpenAI
 
-from modules.config.config import FileUploadConfig
-from modules.document_loader import load_documents
-from modules.url_handler import scrape_website
-from modules.utils import format_json
+from config.config import FileUploadConfig
+from services.document_service import load_documents
+from services.url_service import scrape_website
+from utilities.json_utils import format_json
 
 
 def clean_json_string(raw_string: str) -> str:
