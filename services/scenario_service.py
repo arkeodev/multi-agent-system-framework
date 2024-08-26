@@ -52,8 +52,9 @@ def handle_run_scenario_button():
             file_config=st.session_state.file_upload_config,
             url=st.session_state.url,
         )
-        messages = app.setup_and_run_scenario(
-            message_placeholder, st.session_state.langfuse_handler
+        graph = app.create_graph()
+        messages = app.execute_graph(
+            graph, message_placeholder, st.session_state.langfuse_handler
         )
         st.session_state.messages = messages
     except Exception as e:

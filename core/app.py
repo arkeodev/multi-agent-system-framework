@@ -29,19 +29,21 @@ class App:
         self.agent_config = agent_config
         self.file_config = file_config
         self.url = url
-
-    def setup_and_run_scenario(
-        self, message_placeholder, langfuse_handler: Optional[CallbackHandler]
-    ) -> List[str]:
-        """Sets up agents and runs the scenario, processing messages interactively."""
-        logging.info("Setting up and running scenario")
+    
+    def create_graph(self):
+        """Creates langgraph"""
         agents = self.setup_agents()
         agent_dict = {agent.role_name: agent.agent for agent in agents}
         supervisor_agent = self.create_supervisor()
-        messages = []
+        return create_graph(agent_dict, supervisor_agent).compile()
 
+    def execute_graph(
+        self, graph, message_placeholder, langfuse_handler: Optional[CallbackHandler]
+    ) -> List[str]:
+        """Sets up agents and runs the scenario, processing messages interactively."""
+        logging.info("Setting up and running scenario")
+        messages = []
         last_displayed_message = ""
-        graph = create_graph(agent_dict, supervisor_agent).compile()
         try:
             for message in execute_graph(
                 graph,
