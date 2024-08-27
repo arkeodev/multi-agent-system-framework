@@ -5,35 +5,7 @@ import os
 import streamlit as st
 from pydantic import ValidationError
 
-from config.config import ModelConfig, model_config_dict
-
-
-def display_model_config():
-    """Configure the left column of the UI for model and input configuration."""
-    st.markdown("<h1>m o l e</h1>", unsafe_allow_html=True)
-    st.markdown("<h5>Multi-agent Omni LangGraph Executer</h5>", unsafe_allow_html=True)
-    with st.expander("Model Configuration", expanded=False):
-        model_type = st.selectbox("Select model type:", list(model_config_dict.keys()))
-        model_name = st.selectbox(
-            "Select model:", list(model_config_dict[model_type].keys())
-        )
-        selected_model_config = model_config_dict[model_type].get(model_name)
-        if not selected_model_config:
-            st.error("Selected model configuration not found.")
-            return
-        st.session_state.temperature = st.slider(
-            "Temperature", 0.0, 1.0, selected_model_config.temperature
-        )
-        api_key = ensure_api_key_is_set(model_type)
-        if not api_key:
-            st.warning(
-                "API key is required to proceed. Please provide a valid API key."
-            )
-        st.session_state.recursion_limit = st.number_input(
-            "Set Recursion Limit:", min_value=10, max_value=100, value=25
-        )
-        if api_key:
-            st.session_state.llm = instantiate_llm(selected_model_config, api_key)
+from config.config import ModelConfig
 
 
 def instantiate_llm(config: ModelConfig, api_key: str):

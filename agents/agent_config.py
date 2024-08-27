@@ -1,15 +1,12 @@
-# scenario_generator.py
+# agent_config.py
 
 import json
 import logging
-from typing import List, Optional
+from typing import List
 
 from langchain.schema import Document
 from langchain_openai import ChatOpenAI
 
-from config.config import FileUploadConfig
-from services.document_service import load_documents
-from services.url_service import scrape_website
 from utilities.json_utils import format_json
 
 
@@ -23,9 +20,9 @@ def clean_json_string(raw_string: str) -> str:
     return cleaned_string
 
 
-def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
-    """Generate a scenario configuration file using the LLM based on the provided documents."""
-    logging.info("Generating scenario configuration from documents")
+def generate_config_json(llm: ChatOpenAI, documents: List[Document]) -> str:
+    """Generate a configuration file using the LLM based on the provided documents."""
+    logging.info("Generating the configuration from documents")
 
     # Combine all document contents
     combined_content = "\n\n".join([doc.page_content for doc in documents])
@@ -34,7 +31,7 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
     messages = [
         (
             "system",
-            "You are tasked with generating a JSON configuration for a multi-agent scenario. The configuration should define the roles, prompts, and scenario details for the agents involved. Use the example below as a template for structure only. Do not copy any of the values, only use the structure:",
+            "You are tasked with generating a JSON configuration for a multi-agent environment. The configuration should define the roles, prompts, and scenario details for the agents involved. Use the example below as a template for structure only. Do not copy any of the values, only use the structure:",
         ),
         (
             "system",
@@ -74,9 +71,9 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
 
     try:
         response = llm.invoke(messages)
-        logging.debug(f"Generated scenario configuration: {response}")
+        logging.debug(f"Configuration: {response}")
     except Exception as e:
-        logging.error(f"Failed to generate scenario: {e}")
+        logging.error(f"Failed to generate configuration: {e}")
         return f"{e}"
 
     # Clean and parse the JSON string
@@ -86,25 +83,10 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
         json_data = json.loads(cleaned_json_string)
     except json.JSONDecodeError as e:
         logging.error(f"Failed to decode JSON: {e}\nRaw string: {cleaned_json_string}")
-        return "{The model can't generate a proper formatted scenario. Please try different model.}"
+        return '{"error": "The model could not generate a properly formatted configuration. Please try a different model."}'
 
     # Format the JSON to be pretty-printed
     formatted_json = format_json(json_data)
     logging.debug(f"Formatted JSON configuration: {formatted_json}")
-    logging.info(f"Scenario configuration generated.")
+    logging.info(f"Configuration file generated.")
     return formatted_json
-
-
-def load_documents_for_scenario(
-    file_upload_config: Optional[FileUploadConfig], url: str
-) -> List[Document]:
-    """Load documents from either file uploads or a URL for scenario generation."""
-    documents = []
-
-    if file_upload_config:
-        documents.extend(load_documents(file_upload_config.files))
-
-    if url:
-        documents.extend(scrape_website(url))
-
-    return documents

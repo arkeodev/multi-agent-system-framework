@@ -18,13 +18,13 @@ def execute_graph(
     recursion_limit: int,
     langfuse_handler: Optional[CallbackHandler] = None,
 ) -> Generator[str, None, None]:
-    """Executes a scenario within a constructed graph, handling agent interactions and supervisor decisions.
+    """Executes the agents within a constructed graph, handling agent interactions and supervisor decisions.
     Yields:
-        str: Messages generated during the scenario execution.
+        str: Messages generated during the execution.
     """
-    scenario_message = f"# Step 1 - Scenario\n{scenario}"
+    query_message = f"# Step 1 - Query\n{scenario}"
     initial_state = AgentState(
-        messages=[scenario_message], next=AGENT_SUPERVISOR, scratchpad=[], step=1
+        messages=[query_message], next=AGENT_SUPERVISOR, scratchpad=[], step=1
     )
     config = RunnableConfig(
         recursion_limit=recursion_limit,

@@ -32,7 +32,6 @@ def configure_session_state():
         "recursion_limit": None,
         "temperature": None,
         "config_json": None,
-        "generated_scenario_config": None,
         "messages": [],
         "langfuse_handler": None,
     }
