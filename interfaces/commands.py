@@ -2,7 +2,6 @@
 
 import io
 import json
-import logging
 
 import streamlit as st
 
@@ -198,57 +197,54 @@ def verify_config():
 
 def change_config():
     """Open the current configuration for editing."""
-    if "config_json" not in st.session_state:
-        st.session_state.config_json = "{}"
+    if "edited_config" not in st.session_state:
+        st.session_state.edited_config = st.session_state.config_json
 
     with st.chat_message("assistant"):
         st.markdown("Current configuration:")
+        st.text_area(
+            "Edit configuration:",
+            value=st.session_state.edited_config,
+            height=300,
+            key="config_editor",
+            on_change=update_edited_config,
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("Accept", on_click=handle_accept)
+        with col2:
+            st.button("Cancel", on_click=handle_cancel)
 
-        # Use a form to encapsulate the editable JSON text area and buttons
-        with st.form(key="config_form"):
-            edited_config = st.text_area(
-                "Edit configuration:", value=st.session_state.config_json, height=300
-            )
 
-            # Two columns for Accept and Cancel buttons
-            col1, col2 = st.columns(2)
-            with col1:
-                submit_button = st.form_submit_button(label="Accept")
-            with col2:
-                cancel_button = st.form_submit_button(label="Cancel")
+def update_edited_config():
+    st.session_state.edited_config = st.session_state.config_editor
 
-        # Check if the 'Accept' button was clicked
-        if submit_button:
-            try:
-                # Validate JSON
-                logging.info(f"Edited config: {edited_config}")
-                new_config = json.loads(edited_config)
 
-                # Update the configuration in session state
-                st.session_state.config_json = json.dumps(new_config, indent=2)
-                logging.info(f"Updated config: {st.session_state.config_json}")
+def handle_accept():
+    try:
+        # Validate JSON
+        new_config = json.loads(st.session_state.edited_config)
+        # Update the configuration
+        st.session_state.config_json = json.dumps(new_config, indent=2)
+        st.success("Configuration updated successfully.")
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": f"Configuration updated successfully. New configuration:\n\n```json\n{st.session_state.config_json}\n```",
+            }
+        )
+    except json.JSONDecodeError:
+        st.error("Invalid JSON format. Please provide a valid JSON configuration.")
+    except Exception as e:
+        st.error(f"Error updating configuration: {str(e)}")
 
-                # Show a success message
-                st.success("Configuration updated successfully.")
 
-                # Append the success message to the chat messages
-                st.session_state.messages.append(
-                    {
-                        "role": "assistant",
-                        "content": f"Configuration updated successfully. New configuration:\n\n```json\n{st.session_state.config_json}\n```",
-                    }
-                )
-
-            # Handle JSON validation errors
-            except json.JSONDecodeError:
-                st.error(
-                    "Invalid JSON format. Please provide a valid JSON configuration."
-                )
-
-            # Handle any other exceptions
-            except Exception as e:
-                st.error(f"Error updating configuration: {str(e)}")
-
-        # Check if the 'Cancel' button was clicked
-        elif cancel_button:
-            st.info("Changes discarded.")
+def handle_cancel():
+    st.session_state.edited_config = st.session_state.config_json
+    st.info("Changes discarded.")
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": f"Changes discarded. Current configuration:\n\n```json\n{st.session_state.config_json}\n```",
+        }
+    )
