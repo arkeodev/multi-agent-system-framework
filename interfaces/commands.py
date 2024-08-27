@@ -2,6 +2,7 @@
 
 import io
 import json
+import logging
 
 import streamlit as st
 
@@ -21,8 +22,8 @@ def handle_command(command):
         run_config()
     elif command == "/visualize":
         visualize_graph()
-    elif command.startswith("/change_config"):
-        change_config(command)
+    elif command == "/change_config":
+        change_config()
     else:
         with st.chat_message("assistant"):
             st.markdown(
@@ -195,35 +196,59 @@ def verify_config():
     return True
 
 
-def change_config(command):
-    """Change the current configuration with the provided JSON."""
-    try:
-        # Extract JSON from the command
-        json_config = command.split("/change_config", 1)[1].strip()
-        # Validate JSON
-        new_config = json.loads(json_config)
-        # Update the configuration
-        st.session_state.config_json = json.dumps(new_config, indent=2)
-        with st.chat_message("assistant"):
-            st.code("Configuration updated successfully.")
-            st.session_state.messages.append(
-                {"role": "assistant", "content": "Configuration updated successfully."}
+def change_config():
+    """Open the current configuration for editing."""
+    if "config_json" not in st.session_state:
+        st.session_state.config_json = "{}"
+
+    with st.chat_message("assistant"):
+        st.markdown("Current configuration:")
+
+        # Use a form to encapsulate the editable JSON text area and buttons
+        with st.form(key="config_form"):
+            edited_config = st.text_area(
+                "Edit configuration:", value=st.session_state.config_json, height=300
             )
-    except json.JSONDecodeError:
-        with st.chat_message("assistant"):
-            st.error("Invalid JSON format. Please provide a valid JSON configuration.")
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": "Invalid JSON format. Please provide a valid JSON configuration.",
-                }
-            )
-    except Exception as e:
-        with st.chat_message("assistant"):
-            st.error(f"Error updating configuration: {str(e)}")
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": f"Error updating configuration: {str(e)}",
-                }
-            )
+
+            # Two columns for Accept and Cancel buttons
+            col1, col2 = st.columns(2)
+            with col1:
+                submit_button = st.form_submit_button(label="Accept")
+            with col2:
+                cancel_button = st.form_submit_button(label="Cancel")
+
+        # Check if the 'Accept' button was clicked
+        if submit_button:
+            try:
+                # Validate JSON
+                logging.info(f"Edited config: {edited_config}")
+                new_config = json.loads(edited_config)
+
+                # Update the configuration in session state
+                st.session_state.config_json = json.dumps(new_config, indent=2)
+                logging.info(f"Updated config: {st.session_state.config_json}")
+
+                # Show a success message
+                st.success("Configuration updated successfully.")
+
+                # Append the success message to the chat messages
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": f"Configuration updated successfully. New configuration:\n\n```json\n{st.session_state.config_json}\n```",
+                    }
+                )
+
+            # Handle JSON validation errors
+            except json.JSONDecodeError:
+                st.error(
+                    "Invalid JSON format. Please provide a valid JSON configuration."
+                )
+
+            # Handle any other exceptions
+            except Exception as e:
+                st.error(f"Error updating configuration: {str(e)}")
+
+        # Check if the 'Cancel' button was clicked
+        elif cancel_button:
+            st.info("Changes discarded.")
