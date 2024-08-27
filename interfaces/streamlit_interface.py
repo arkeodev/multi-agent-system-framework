@@ -1,5 +1,7 @@
 # streamlit_interfice.py
 
+import random
+
 import streamlit as st
 from PIL import Image
 
@@ -19,6 +21,10 @@ def layout_streamlit_ui():
         display_model_config()
         display_file_and_url_inputs()
         handle_langfuse_integration()
+        # Add Clear button
+        if st.button("Clear", use_container_width=True):
+            clear_session_state()
+            st.rerun()
     # Chat history
     display_chat_history()
     # Chat input
@@ -77,12 +83,16 @@ def display_file_and_url_inputs():
 def handle_file_uploads():
     """Handle file upload input and update the session state for uploaded files."""
     try:
+        if "file_uploader_key" not in st.session_state:
+            st.session_state.file_uploader_key = "0"
+
         uploaded_files = st.file_uploader(
             "Upload Files",
             accept_multiple_files=True,
             type=st.session_state.get(
                 "allowed_file_types", ["pdf", "csv", "md", "epub", "json", "xml", "txt"]
             ),
+            key=st.session_state.file_uploader_key,
         )
         if uploaded_files:
             file_paths = [str(save_uploaded_file(file)) for file in uploaded_files]
@@ -130,3 +140,13 @@ def display_chat_widget():
                         "content": "I'm sorry, I don't understand that. Please use a command starting with '/'.",
                     }
                 )
+
+
+def clear_session_state():
+    """Clear all session state variables and cache."""
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    # Reset file uploader state
+    st.session_state.file_uploader_key = str(random.randint(1000, 9999))
