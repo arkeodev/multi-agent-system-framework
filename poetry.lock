@@ -4625,6 +4625,20 @@ files = [
 ]
 
 [[package]]
+name = "undetected-playwright"
+version = "0.3.0"
+description = "You know who I am"
+optional = false
+python-versions = "<4.0,>=3.8"
+files = [
+    {file = "undetected_playwright-0.3.0-py3-none-any.whl", hash = "sha256:dbcc76a6bfdd4ebc849a26c8f084355295ec415af316b1e4fd0a2a011397df92"},
+    {file = "undetected_playwright-0.3.0.tar.gz", hash = "sha256:c476baf095eaea6ee320dd8739e83811da6006227fa9b2492a4e3a8c0cb2b315"},
+]
+
+[package.dependencies]
+playwright = "*"
+
+[[package]]
 name = "unstructured"
 version = "0.15.5"
 description = "A library that prepares raw documents for downstream ML tasks."
@@ -5304,4 +5318,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.13"
-content-hash = "10de94885dfccab7e5cdd5a213fdbc1c0b5c13f88227318831782157eb017a65"
+content-hash = "fe630d72aab74e24ff3256e735278a422dfe886bfbf2a063a6d40d6aa46315a4"

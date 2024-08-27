@@ -26,6 +26,7 @@ playwright = "^1.46.0"
 beautifulsoup4 = "^4.12.3"
 scikit-learn = "^1.5.1"
 newspaper3k = "^0.2.8"
+undetected-playwright = "^0.3.0"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
