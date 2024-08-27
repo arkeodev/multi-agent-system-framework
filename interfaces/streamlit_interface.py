@@ -1,30 +1,27 @@
 # streamlit_interfice.py
 
 import streamlit as st
-
-from config.config import SAMPLE_AGENT_CONFIG, FileUploadConfig, model_config_dict
-from services.config_service import generate_config, run_config, visualize_graph
+from PIL import Image
+from interfaces.commands import handle_command
 from services.langfuse_service import handle_langfuse_integration
 from services.model_service import ensure_api_key_is_set, instantiate_llm
+from config.config import FileUploadConfig, model_config_dict
 from utilities.file_utils import save_uploaded_file
-
 
 def layout_streamlit_ui():
     """Layout the UI elements of the Streamlit application."""
-    left_column, mid_column, right_column = st.columns([0.8, 0.2, 2.0])
-    with left_column:
-        try:
-            display_model_config()
-            display_file_and_url_inputs()
-            handle_langfuse_integration()
-        except Exception as e:
-            st.error(f"Error displaying components: {e}")
-    with mid_column:
-        st.image("images/mole.png")
-    with right_column:
-        display_agent_config()
-    display_buttons()
-
+    # Sidebar
+    with st.sidebar:
+        image = Image.open("images/mole.png")
+        st.image(image, width=100)
+        display_model_config()
+        display_file_and_url_inputs()
+        handle_langfuse_integration()
+    # Chat history
+    display_chat_history()
+    # Chat input
+    display_chat_widget()
+    
 
 def display_model_config():
     """Configure the left column of the UI for model and input configuration."""
@@ -71,8 +68,8 @@ def display_file_and_url_inputs():
 
         if not st.session_state.file_upload_config and not st.session_state.url:
             st.warning("Please provide either a file or URL.")
-
-
+            
+            
 def handle_file_uploads():
     """Handle file upload input and update the session state for uploaded files."""
     try:
@@ -95,42 +92,30 @@ def handle_file_uploads():
 def handle_url() -> str:
     """Handle URL input and return the provided URL."""
     return st.text_input("Enter URL", placeholder="Enter URL")
+            
 
+def display_chat_history():
+    """Display the chat history in a scrollable area."""
+    chat_container = st.container()
+    with chat_container:
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+                
 
-def display_agent_config():
-    """Display the JSON configuration editor on the right side of the UI."""
-    from utilities.json_utils import format_json, read_json
+def display_chat_widget():
+    """Display the chat widget and handle commands."""
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-    try:
-        placeholder_json = format_json(read_json(SAMPLE_AGENT_CONFIG))
-    except Exception as e:
-        st.error(f"Error loading or formatting JSON: {e}")
-    st.markdown("<h5>Agent Configuration</h5>", unsafe_allow_html=True)
-    st.markdown("Edit the configuration if not applicable.")
-    st.text_area(
-        label=" ",
-        label_visibility="hidden",
-        value=st.session_state.config_json or "",
-        placeholder=placeholder_json,
-        key="generated_config_text_area",
-        height=500,
-    )
+    if prompt := st.chat_input("Enter a command or message"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-
-def display_buttons():
-    """Display buttons for generating, running, and visualizing agents in graph."""
-    with st.container():
-        col1, col2 = st.columns([1, 2])
-
-        with col1:
-            col1a, col1b = st.columns([1, 1])
-            with col1a:
-                if st.button("Generate Agent Configuration", use_container_width=True):
-                    generate_config()
-            with col1b:
-                if st.button("Visualize Graph", use_container_width=True):
-                    visualize_graph()
-
-        with col2:
-            if st.button("Run", use_container_width=True):
-                run_config()
+        if prompt.startswith("/"):
+            handle_command(prompt)
+        else:
+            with st.chat_message("assistant"):
+                st.markdown("I'm sorry, I don't understand that. Please use a command starting with '/'.")
+                st.session_state.messages.append({"role": "assistant", "content": "I'm sorry, I don't understand that. Please use a command starting with '/'."})
