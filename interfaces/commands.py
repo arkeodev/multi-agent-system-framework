@@ -21,8 +21,8 @@ def handle_command(command):
         run_config()
     elif command == "/visualize":
         visualize_graph()
-    elif command.startswith("/change_config"):
-        change_config(command)
+    elif command == "/change_config":
+        change_config()
     else:
         with st.chat_message("assistant"):
             st.markdown(
@@ -195,35 +195,56 @@ def verify_config():
     return True
 
 
-def change_config(command):
-    """Change the current configuration with the provided JSON."""
+def change_config():
+    """Open the current configuration for editing."""
+    if "edited_config" not in st.session_state:
+        st.session_state.edited_config = st.session_state.config_json
+
+    with st.chat_message("assistant"):
+        st.markdown("Current configuration:")
+        st.text_area(
+            "Edit configuration:",
+            value=st.session_state.edited_config,
+            height=300,
+            key="config_editor",
+            on_change=update_edited_config,
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("Accept", on_click=handle_accept)
+        with col2:
+            st.button("Cancel", on_click=handle_cancel)
+
+
+def update_edited_config():
+    st.session_state.edited_config = st.session_state.config_editor
+
+
+def handle_accept():
     try:
-        # Extract JSON from the command
-        json_config = command.split("/change_config", 1)[1].strip()
         # Validate JSON
-        new_config = json.loads(json_config)
+        new_config = json.loads(st.session_state.edited_config)
         # Update the configuration
         st.session_state.config_json = json.dumps(new_config, indent=2)
-        with st.chat_message("assistant"):
-            st.code("Configuration updated successfully.")
-            st.session_state.messages.append(
-                {"role": "assistant", "content": "Configuration updated successfully."}
-            )
+        st.success("Configuration updated successfully.")
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": f"Configuration updated successfully. New configuration:\n\n```json\n{st.session_state.config_json}\n```",
+            }
+        )
     except json.JSONDecodeError:
-        with st.chat_message("assistant"):
-            st.error("Invalid JSON format. Please provide a valid JSON configuration.")
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": "Invalid JSON format. Please provide a valid JSON configuration.",
-                }
-            )
+        st.error("Invalid JSON format. Please provide a valid JSON configuration.")
     except Exception as e:
-        with st.chat_message("assistant"):
-            st.error(f"Error updating configuration: {str(e)}")
-            st.session_state.messages.append(
-                {
-                    "role": "assistant",
-                    "content": f"Error updating configuration: {str(e)}",
-                }
-            )
+        st.error(f"Error updating configuration: {str(e)}")
+
+
+def handle_cancel():
+    st.session_state.edited_config = st.session_state.config_json
+    st.info("Changes discarded.")
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": f"Changes discarded. Current configuration:\n\n```json\n{st.session_state.config_json}\n```",
+        }
+    )
