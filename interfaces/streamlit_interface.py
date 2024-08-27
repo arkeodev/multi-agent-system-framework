@@ -2,11 +2,13 @@
 
 import streamlit as st
 from PIL import Image
+
+from config.config import FileUploadConfig, model_config_dict
 from interfaces.commands import handle_command
 from services.langfuse_service import handle_langfuse_integration
 from services.model_service import ensure_api_key_is_set, instantiate_llm
-from config.config import FileUploadConfig, model_config_dict
 from utilities.file_utils import save_uploaded_file
+
 
 def layout_streamlit_ui():
     """Layout the UI elements of the Streamlit application."""
@@ -21,7 +23,7 @@ def layout_streamlit_ui():
     display_chat_history()
     # Chat input
     display_chat_widget()
-    
+
 
 def display_model_config():
     """Configure the left column of the UI for model and input configuration."""
@@ -34,7 +36,9 @@ def display_model_config():
         )
         selected_model_config = model_config_dict[model_type].get(model_name)
         if not selected_model_config:
-            st.error("The selected model configuration was not found. Please select a different model.")
+            st.error(
+                "The selected model configuration was not found. Please select a different model."
+            )
             return
         st.session_state.temperature = st.slider(
             "Temperature", 0.0, 1.0, selected_model_config.temperature
@@ -68,8 +72,8 @@ def display_file_and_url_inputs():
 
         if not st.session_state.file_upload_config and not st.session_state.url:
             st.warning("Please provide either a file or URL.")
-            
-            
+
+
 def handle_file_uploads():
     """Handle file upload input and update the session state for uploaded files."""
     try:
@@ -92,7 +96,7 @@ def handle_file_uploads():
 def handle_url() -> str:
     """Handle URL input and return the provided URL."""
     return st.text_input("Enter URL", placeholder="Enter URL")
-            
+
 
 def display_chat_history():
     """Display the chat history in a scrollable area."""
@@ -101,7 +105,7 @@ def display_chat_history():
         for message in st.session_state.messages:
             with st.chat_message(message["role"]):
                 st.markdown(message["content"])
-                
+
 
 def display_chat_widget():
     """Display the chat widget and handle commands."""
@@ -117,5 +121,12 @@ def display_chat_widget():
             handle_command(prompt)
         else:
             with st.chat_message("assistant"):
-                st.markdown("I'm sorry, I don't understand that. Please use a command starting with '/'.")
-                st.session_state.messages.append({"role": "assistant", "content": "I'm sorry, I don't understand that. Please use a command starting with '/'."})
+                st.markdown(
+                    "I'm sorry, I don't understand that. Please use a command starting with '/'."
+                )
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": "I'm sorry, I don't understand that. Please use a command starting with '/'.",
+                    }
+                )
