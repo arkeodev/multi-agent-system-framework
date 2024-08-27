@@ -2,11 +2,11 @@
 
 import streamlit as st
 
-from config.config import SAMPLE_AGENT_CONFIG
-from services.file_service import handle_file_uploads, handle_url
+from config.config import SAMPLE_AGENT_CONFIG, FileUploadConfig
 from services.langfuse_service import handle_langfuse_integration
 from services.model_service import display_model_config
 from services.scenario_service import display_buttons
+from utilities.file_utils import save_uploaded_file
 
 
 def layout_streamlit_ui():
@@ -56,3 +56,25 @@ def display_agent_config():
         key="generated_config_text_area",
         height=500,
     )
+
+
+def handle_file_uploads():
+    """Handle file upload input and update the session state for uploaded files."""
+    try:
+        uploaded_files = st.file_uploader(
+            "Upload Files",
+            accept_multiple_files=True,
+            type=st.session_state.get(
+                "allowed_file_types", ["pdf", "csv", "md", "epub", "json", "xml", "txt"]
+            ),
+        )
+        if uploaded_files:
+            file_paths = [str(save_uploaded_file(file)) for file in uploaded_files]
+            st.session_state.file_upload_config = FileUploadConfig(files=file_paths)
+    except Exception as e:
+        st.error(f"Error uploading files: {e}")
+
+
+def handle_url() -> str:
+    """Handle URL input and return the configuration for the provided URL."""
+    return st.text_input("Enter URL", placeholder="Enter URL")

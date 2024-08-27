@@ -13,9 +13,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from services.document_service import load_documents
 
 
-def setup_rag_chain(
-    file_paths: List[str], llm: ChatOpenAI, vector_index_path: str
-) -> Any:
+def setup_rag_chain(file_paths: List[str], llm: ChatOpenAI) -> Any:
     """Set up a Retrieval-Augmented Generation (RAG) chain using loaded documents and save the resulting vector index."""
     logging.info(f"Setting up RAG chain for files: {file_paths}")
 

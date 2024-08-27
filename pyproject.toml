@@ -24,8 +24,8 @@ langfuse = "^2.43.3"
 langchain-ollama = "^0.1.1"
 playwright = "^1.46.0"
 beautifulsoup4 = "^4.12.3"
-readability = "^0.3.1"
 scikit-learn = "^1.5.1"
+newspaper3k = "^0.2.8"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"

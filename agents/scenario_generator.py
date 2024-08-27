@@ -96,15 +96,17 @@ def generate_scenario_config(llm: ChatOpenAI, documents: List[Document]) -> str:
 
 
 def load_documents_for_scenario(
-    file_upload_config: Optional[FileUploadConfig], url: str
+    file_upload_config: Optional[FileUploadConfig], url: Optional[str]
 ) -> List[Document]:
     """Load documents from either file uploads or a URL for scenario generation."""
     documents = []
 
     if file_upload_config:
+        logging.info(f"Loading documents from file uploads: {file_upload_config.files}")
         documents.extend(load_documents(file_upload_config.files))
 
     if url:
+        logging.info(f"Loading documents from URL: {url}")
         web_scraper = WebScraper()
         documents.extend(web_scraper.scrape_website(url))
 

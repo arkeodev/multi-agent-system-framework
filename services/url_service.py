@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 # url_service.py
 
 import logging
@@ -10,11 +12,10 @@ from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
 
 import numpy as np
-from bs4 import BeautifulSoup, Comment, Tag
+from bs4 import BeautifulSoup, Comment
 from langchain.schema import Document
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
-from readability import Readability
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 
@@ -149,14 +150,14 @@ class ContentCleaner:
             para for para, score in zip(paragraphs, avg_scores) if score > threshold
         ]
 
-    def score_readability(self, text: str) -> float:
-        """Calculate the Flesch-Kincaid readability score for a given text."""
-        r = Readability(text)
-        return r.flesch_kincaid().score
+    def score_readability(self, text):
+        """Calculate a basic readability score for a given text."""
+        words = len(re.findall(r"\w+", text))
+        sentences = len(re.findall(r"\w+[.!?]", text)) or 1
+        return words / sentences  # A simple words per sentence ratio
 
-    def find_content_wrapper(self, soup: BeautifulSoup) -> Optional[Tag]:
+    def find_content_wrapper(self, soup):
         """Identify the main content wrapper based on readability and structure."""
-        # Find potential content wrapper elements
         candidates = soup.find_all(["div", "article", "main", "section"])
         if not candidates:
             return None
@@ -166,14 +167,11 @@ class ContentCleaner:
             text = candidate.get_text()
             score = self.score_readability(text)
             text_length = len(text)
-            # Calculate paragraph density
             p_density = len(candidate.find_all("p")) / (len(candidate.find_all()) + 1)
 
-            # Combine factors into a single score
             combined_score = score * text_length * p_density
             scored_candidates.append((candidate, combined_score))
 
-        # Return the candidate with the highest score
         return max(scored_candidates, key=lambda x: x[1])[0]
 
 
@@ -183,28 +181,37 @@ class WebScraper:
         self.rate_limiter = RateLimiter(requests_per_minute)
         self.robot_parsers = {}
         self.content_cleaner = ContentCleaner()
+        logging.info(
+            f"WebScraper initialized with {requests_per_minute} requests per minute"
+        )
 
     def can_fetch(self, url: str) -> bool:
         parsed_url = urlparse(url)
         base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
         if base_url not in self.robot_parsers:
+            logging.info(f"Fetching robots.txt for {base_url}")
             rp = RobotFileParser()
             rp.set_url(urljoin(base_url, "/robots.txt"))
             rp.read()
             self.robot_parsers[base_url] = rp
 
-        return self.robot_parsers[base_url].can_fetch("*", url)
+        can_fetch = self.robot_parsers[base_url].can_fetch("*", url)
+        logging.info(f"Can fetch {url}: {can_fetch}")
+        return can_fetch
 
     def scrape_website(self, url: str, timeout: int = 30000) -> List[Document]:
+        logging.info(f"Starting to scrape website: {url}")
         if not self.can_fetch(url):
             logging.warning(f"Scraping not allowed for {url} according to robots.txt")
             return []
 
         self.rate_limiter.wait()
+        logging.info(f"Rate limiter delay applied for {url}")
 
         try:
             with sync_playwright() as p:
+                logging.info("Launching browser")
                 browser = p.chromium.launch()
                 context = browser.new_context(
                     user_agent="YourBot/1.0 (+https://yourwebsite.com/bot)"
@@ -212,60 +219,76 @@ class WebScraper:
                 page = context.new_page()
 
                 try:
+                    logging.info(f"Navigating to {url}")
                     page.goto(url, timeout=timeout)
+                    logging.info("Waiting for network idle")
                     page.wait_for_load_state("networkidle", timeout=timeout)
                 except PlaywrightTimeoutError:
                     logging.warning(f"Timeout occurred while loading {url}")
 
+                logging.info("Extracting page content")
                 content = page.content()
                 browser.close()
+                logging.info("Browser closed")
         except Exception as e:
             logging.error(f"Error occurred while scraping {url}: {str(e)}")
             return []
 
+        logging.info("Extracting and processing content")
         return self.extract_content(content, url)
 
     def extract_content(self, html_content: str, url: str) -> List[Document]:
-        """Extract and clean content from HTML, converting it to a Document object."""
+        logging.info("Cleaning and parsing HTML content")
         soup = BeautifulSoup(html_content, "html.parser")
         cleaned_soup = self.content_cleaner.clean(soup)
 
-        # Extract main content as a single string
-        main_content = " ".join(
-            p.get_text(strip=True) for p in cleaned_soup.find_all("p")
-        )
+        logging.info("Extracting main content")
+        main_content = self.extract_main_content(cleaned_soup)
 
-        # Create a Document object with the cleaned content and metadata
-        document = Document(
-            page_content=main_content,
-            metadata={"url": url, "title": self.extract_title(soup)},
-        )
+        logging.info("Extracting sections")
+        sections = self.extract_sections(cleaned_soup)
 
-        return [document]
+        documents = []
 
-    def extract_main_content(self, soup: BeautifulSoup) -> Optional[str]:
-        """Extract the main content of the page."""
-        main = (
-            soup.find("main")
-            or soup.find("article")
-            or soup.find("div", class_="content")
-        )
-        if main:
-            return " ".join(
-                p.get_text(strip=True)
-                for p in main.find_all("p")
-                if p.get_text(strip=True)
+        logging.info("Creating main content document")
+        documents.append(
+            Document(
+                page_content=main_content,
+                metadata={
+                    "url": url,
+                    "title": self.extract_title(soup),
+                    "type": "main_content",
+                },
             )
-        return " ".join(
+        )
+
+        logging.info(f"Creating {len(sections)} section documents")
+        for section in sections:
+            documents.append(
+                Document(
+                    page_content=section["content"],
+                    metadata={"url": url, "title": section["title"], "type": "section"},
+                )
+            )
+
+        logging.info(f"Extracted {len(documents)} documents in total")
+        return documents
+
+    def extract_main_content(self, soup: BeautifulSoup) -> str:
+        logging.info("Extracting main content from paragraphs")
+        content = " ".join(
             p.get_text(strip=True) for p in soup.find_all("p") if p.get_text(strip=True)
         )
+        logging.info(f"Extracted {len(content)} characters of main content")
+        return content
 
     def extract_title(self, soup: BeautifulSoup) -> str:
-        """Extract the title of the page."""
-        return soup.title.string if soup.title else ""
+        title = soup.title.string if soup.title else ""
+        logging.info(f"Extracted title: {title}")
+        return title
 
     def extract_sections(self, soup: BeautifulSoup) -> List[dict]:
-        """Extract relevant sections from the page."""
+        logging.info("Extracting sections from headers")
         sections = []
         for header in soup.find_all(["h1", "h2", "h3"]):
             content = []
@@ -276,5 +299,5 @@ class WebScraper:
                     content.append(sibling.text)
             if content:
                 sections.append({"title": header.text, "content": " ".join(content)})
+        logging.info(f"Extracted {len(sections)} sections")
         return sections
-    
