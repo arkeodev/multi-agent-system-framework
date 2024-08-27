@@ -120,3 +120,29 @@ class App:
         # Open the image using the appropriate library (assuming the image is stored in a byte stream)
         graph_image = Image.open(BytesIO(graph_representation))
         return graph_image
+
+
+def clear_session_state():
+    """Clear all session state variables except for 'messages'"""
+    keys_to_keep = ["messages"]
+    for key in list(st.session_state.keys()):
+        if key not in keys_to_keep:
+            del st.session_state[key]
+
+
+def main():
+    # ... existing code ...
+
+    # Add this to your sidebar
+    with st.sidebar:
+        if st.button("Clear"):
+            clear_session_state()
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.rerun()
+
+    # ... rest of your main function ...
+
+
+if __name__ == "__main__":
+    main()
