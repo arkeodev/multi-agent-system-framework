@@ -11,7 +11,6 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
-from config.config import FileUploadConfig
 from services.document_service import load_documents
 from services.url_service import WebScraper
 
