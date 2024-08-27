@@ -17,6 +17,7 @@ from langchain.schema import Document
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 from playwright.sync_api import sync_playwright
 from sklearn.feature_extraction.text import TfidfVectorizer
+from undetected_playwright import Malenia
 
 
 def ensure_playwright_installed():
@@ -204,7 +205,7 @@ class WebScraper:
         logging.info(f"Starting to scrape website: {url}")
         if not self.can_fetch(url):
             logging.warning(f"Scraping not allowed for {url} according to robots.txt")
-            return []
+            # return []
 
         self.rate_limiter.wait()
         logging.info(f"Rate limiter delay applied for {url}")
@@ -212,10 +213,11 @@ class WebScraper:
         try:
             with sync_playwright() as p:
                 logging.info("Launching browser")
-                browser = p.chromium.launch()
+                browser = p.chromium.launch(headless=True)
                 context = browser.new_context(
                     user_agent="YourBot/1.0 (+https://yourwebsite.com/bot)"
                 )
+                Malenia.apply_stealth(context)  # Apply stealth mode
                 page = context.new_page()
 
                 try:
@@ -234,70 +236,52 @@ class WebScraper:
             logging.error(f"Error occurred while scraping {url}: {str(e)}")
             return []
 
-        logging.info("Extracting and processing content")
+        logging.info(f"Extracting and processing content for {url}")
         return self.extract_content(content, url)
 
     def extract_content(self, html_content: str, url: str) -> List[Document]:
         logging.info("Cleaning and parsing HTML content")
         soup = BeautifulSoup(html_content, "html.parser")
-        cleaned_soup = self.content_cleaner.clean(soup)
 
-        logging.info("Extracting main content")
-        main_content = self.extract_main_content(cleaned_soup)
+        # Extract title
+        title = self.extract_title(soup)
 
-        logging.info("Extracting sections")
-        sections = self.extract_sections(cleaned_soup)
+        # Extract main content
+        main_content = self.extract_main_content(soup)
 
-        documents = []
-
-        logging.info("Creating main content document")
-        documents.append(
-            Document(
-                page_content=main_content,
-                metadata={
-                    "url": url,
-                    "title": self.extract_title(soup),
-                    "type": "main_content",
-                },
-            )
+        # Create document
+        document = Document(
+            page_content=main_content,
+            metadata={
+                "url": url,
+                "title": title,
+                "type": "main_content",
+            },
         )
 
-        logging.info(f"Creating {len(sections)} section documents")
-        for section in sections:
-            documents.append(
-                Document(
-                    page_content=section["content"],
-                    metadata={"url": url, "title": section["title"], "type": "section"},
-                )
-            )
-
-        logging.info(f"Extracted {len(documents)} documents in total")
-        return documents
+        logging.info(f"Extracted document with {main_content} characters")
+        return [document]
 
     def extract_main_content(self, soup: BeautifulSoup) -> str:
-        logging.info("Extracting main content from paragraphs")
-        content = " ".join(
-            p.get_text(strip=True) for p in soup.find_all("p") if p.get_text(strip=True)
-        )
-        logging.info(f"Extracted {len(content)} characters of main content")
-        return content
+        # Remove script and style elements
+        for script in soup(["script", "style"]):
+            script.decompose()
+
+        # Get text
+        text = soup.get_text()
+
+        # Break into lines and remove leading and trailing space on each
+        lines = (line.strip() for line in text.splitlines())
+
+        # Break multi-headlines into a line each
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+
+        # Drop blank lines
+        text = "\n".join(chunk for chunk in chunks if chunk)
+
+        return text
 
     def extract_title(self, soup: BeautifulSoup) -> str:
         title = soup.title.string if soup.title else ""
         logging.info(f"Extracted title: {title}")
         return title
-
-    def extract_sections(self, soup: BeautifulSoup) -> List[dict]:
-        logging.info("Extracting sections from headers")
-        sections = []
-        for header in soup.find_all(["h1", "h2", "h3"]):
-            content = []
-            for sibling in header.find_next_siblings():
-                if sibling.name in ["h1", "h2", "h3"]:
-                    break
-                if sibling.name in ["p", "ul", "ol"]:
-                    content.append(sibling.text)
-            if content:
-                sections.append({"title": header.text, "content": " ".join(content)})
-        logging.info(f"Extracted {len(sections)} sections")
-        return sections
