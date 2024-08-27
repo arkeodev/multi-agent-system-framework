@@ -1,6 +1,7 @@
 # app.py
 
 import logging
+from io import BytesIO
 from typing import Any, List, Optional
 
 from langchain_core.runnables.graph import MermaidDrawMethod
@@ -13,7 +14,7 @@ from agents.graph import create_graph
 from agents.rag import setup_rag_chain
 from agents.supervisor import create_team_supervisor
 from agents.tools import RagTool
-from config.config import VECTOR_INDEX_PATH, FileUploadConfig
+from config.config import FileUploadConfig
 from core.execution import execute_graph
 
 
@@ -48,10 +49,10 @@ class App:
     def graph(self):
         """Lazily creates and returns the graph if not already created."""
         if self._graph is None:
-            self._graph = self.create_graph()
+            self._graph = self.build_graph()
         return self._graph
 
-    def create_graph(self):
+    def build_graph(self):
         """Creates langgraph using the injected factories."""
         agents = self.setup_agents()
         agent_dict = {agent.role_name: agent.agent for agent in agents}
@@ -60,7 +61,7 @@ class App:
 
     def execute_graph(self, message_placeholder) -> List[str]:
         """Runs the scenario, processing messages interactively."""
-        logging.info("Setting up and running scenario")
+        logging.info("Setting up and running graph")
         messages = []
         last_displayed_message = ""
         try:
@@ -81,8 +82,8 @@ class App:
                     )  # Update the placeholder here
                     last_displayed_message = message
         except Exception as e:
-            logging.error(f"Error during scenario execution: {e}")
-            raise RuntimeError(f"Failed to execute scenario due to: {e}") from e
+            logging.error(f"Error during execution: {e}")
+            raise RuntimeError(f"Failed to execute due to: {e}") from e
 
         return messages
 
@@ -90,9 +91,9 @@ class App:
         """Configures agents based on the provided configuration."""
         logging.info("Setting up agents")
         rag_chain = setup_rag_chain(
-            self.file_config.files,
-            self.llm,
-            VECTOR_INDEX_PATH,
+            files_path_list=getattr(self.file_config, "files", None),
+            url=self.url,
+            llm=self.llm,
         )
         rag_tool = self.rag_tool_factory(rag_chain=rag_chain)
         agents: List[AgentModel] = self.agent_factory(
@@ -116,10 +117,6 @@ class App:
         graph_representation = self.graph.get_graph().draw_mermaid_png(
             draw_method=MermaidDrawMethod.API
         )
-
         # Open the image using the appropriate library (assuming the image is stored in a byte stream)
-        from io import BytesIO
-
         graph_image = Image.open(BytesIO(graph_representation))
-
         return graph_image

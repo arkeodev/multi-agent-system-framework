@@ -9,9 +9,8 @@ from pydantic import BaseModel, HttpUrl
 
 # Constants
 AGENT_SUPERVISOR = "supervisor"
-VECTOR_INDEX_PATH = "vector_index.faiss"
-ROUTE_NAME = "route"
 FINISH = "FINISH"
+ROUTE_NAME = "route"
 SAMPLE_AGENT_CONFIG = Path().absolute() / "config" / "sample_agent_config.json"
 
 
