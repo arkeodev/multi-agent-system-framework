@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 import time
-from typing import List, Optional
+from typing import List
 from urllib.parse import urljoin, urlparse
 from urllib.robotparser import RobotFileParser
 
@@ -87,7 +87,7 @@ class ContentCleaner:
         # Extract paragraphs and remove boilerplate content
         paragraphs = [p.get_text() for p in soup.find_all("p")]
         cleaned_paragraphs = self.remove_boilerplate(paragraphs)
-
+        logging.debug(f"Cleaned paragraphs: {cleaned_paragraphs}")
         # Reconstruct the soup with cleaned paragraphs
         new_soup = BeautifulSoup("<div></div>", "html.parser")
         for para in cleaned_paragraphs:

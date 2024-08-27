@@ -37,7 +37,7 @@ def display_model_config():
         )
         selected_model_config = model_config_dict[model_type].get(model_name)
         if not selected_model_config:
-            st.error("Selected model configuration not found.")
+            st.error("The selected model configuration was not found. Please select a different model.")
             return
         st.session_state.temperature = st.slider(
             "Temperature", 0.0, 1.0, selected_model_config.temperature

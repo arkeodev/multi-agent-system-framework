@@ -83,7 +83,7 @@ def generate_config_json(llm: ChatOpenAI, documents: List[Document]) -> str:
         json_data = json.loads(cleaned_json_string)
     except json.JSONDecodeError as e:
         logging.error(f"Failed to decode JSON: {e}\nRaw string: {cleaned_json_string}")
-        return "{The model can't generate a proper formatted configuration. Please try different model.}"
+        return '{"error": "The model could not generate a properly formatted configuration. Please try a different model."}'
 
     # Format the JSON to be pretty-printed
     formatted_json = format_json(json_data)
