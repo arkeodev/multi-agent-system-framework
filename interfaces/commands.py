@@ -15,7 +15,7 @@ def handle_command(command):
     """Handle different commands entered in the chat widget."""
     if command == "/help":
         display_help()
-    elif command == "/generate":
+    elif command == "/generate_config":
         generate_config()
     elif command == "/run":
         run_config()
@@ -40,21 +40,21 @@ def display_help():
     """Display help information for available commands."""
     help_text = """
     Available commands:
-    
-    • /help
-      Display this help message
-    
-    • /generate
-      Generate agent configuration
-    
-    • /run
-      Run the current configuration
-    
-    • /visualize
-      Visualize the graph
-    
-    • /change_config {json_config}
-      Change the current configuration
+
+    **• /help**
+    *Display this help message*
+
+    **• /generate_config**
+    *Generate agent configuration*
+
+    **• /run**
+    *Run the current configuration*
+
+    **• /visualize**
+    *Visualize the graph*
+
+    **• /change_config**
+    *Change the current configuration (provide JSON as argument)*
     """
     with st.chat_message("assistant"):
         st.markdown(help_text)
