@@ -259,7 +259,7 @@ class WebScraper:
             },
         )
 
-        logging.info(f"Extracted document with {main_content} characters")
+        logging.info(f"Extracted document with {len(main_content)} characters")
         return [document]
 
     def extract_main_content(self, soup: BeautifulSoup) -> str:

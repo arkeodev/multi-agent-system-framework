@@ -55,15 +55,46 @@ def display_model_config():
 
 
 def display_file_and_url_inputs():
-    """Display the file upload and URL input options."""
+    """Display either file upload or URL input options based on user selection."""
     with st.expander("Information Provider", expanded=False):
+        input_type = st.radio("Select input type:", ["File Upload", "URL"])
+
         try:
-            handle_file_uploads()
-            st.session_state.url = handle_url()
+            if input_type == "File Upload":
+                handle_file_uploads()
+                st.session_state.url = None
+            else:
+                st.session_state.url = handle_url()
+                st.session_state.file_upload_config = None
         except Exception as e:
-            st.error(f"Error handling file uploads or URL input: {e}")
+            st.error(f"Error handling {input_type}: {e}")
+
         if not st.session_state.file_upload_config and not st.session_state.url:
-            st.warning("Either a file or URL should be provided!")
+            st.warning("Please provide either a file or URL.")
+
+
+def handle_file_uploads():
+    """Handle file upload input and update the session state for uploaded files."""
+    try:
+        uploaded_files = st.file_uploader(
+            "Upload Files",
+            accept_multiple_files=True,
+            type=st.session_state.get(
+                "allowed_file_types", ["pdf", "csv", "md", "epub", "json", "xml", "txt"]
+            ),
+        )
+        if uploaded_files:
+            file_paths = [str(save_uploaded_file(file)) for file in uploaded_files]
+            st.session_state.file_upload_config = FileUploadConfig(files=file_paths)
+        else:
+            st.session_state.file_upload_config = None
+    except Exception as e:
+        st.error(f"Error uploading files: {e}")
+
+
+def handle_url() -> str:
+    """Handle URL input and return the provided URL."""
+    return st.text_input("Enter URL", placeholder="Enter URL")
 
 
 def display_agent_config():
@@ -103,25 +134,3 @@ def display_buttons():
         with col2:
             if st.button("Run", use_container_width=True):
                 run_config()
-
-
-def handle_file_uploads():
-    """Handle file upload input and update the session state for uploaded files."""
-    try:
-        uploaded_files = st.file_uploader(
-            "Upload Files",
-            accept_multiple_files=True,
-            type=st.session_state.get(
-                "allowed_file_types", ["pdf", "csv", "md", "epub", "json", "xml", "txt"]
-            ),
-        )
-        if uploaded_files:
-            file_paths = [str(save_uploaded_file(file)) for file in uploaded_files]
-            st.session_state.file_upload_config = FileUploadConfig(files=file_paths)
-    except Exception as e:
-        st.error(f"Error uploading files: {e}")
-
-
-def handle_url() -> str:
-    """Handle URL input and return the configuration for the provided URL."""
-    return st.text_input("Enter URL", placeholder="Enter URL")
