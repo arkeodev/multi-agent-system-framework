@@ -1,4 +1,4 @@
-# streamlit_interfice.py
+# streamlit_interface.py
 
 import random
 
@@ -6,7 +6,7 @@ import streamlit as st
 from PIL import Image
 
 from config.config import FileUploadConfig, model_config_dict
-from interfaces.commands import handle_command
+from interfaces.commands import process_command
 from services.langfuse_service import handle_langfuse_integration
 from services.model_service import ensure_api_key_is_set, instantiate_llm
 from utilities.file_utils import save_uploaded_file
@@ -128,7 +128,7 @@ def display_chat_widget():
             st.markdown(prompt)
 
         if prompt.startswith("/"):
-            handle_command(prompt)
+            process_command(prompt, st.session_state)
         else:
             with st.chat_message("assistant"):
                 st.markdown(
