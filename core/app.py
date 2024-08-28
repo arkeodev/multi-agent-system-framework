@@ -60,7 +60,7 @@ class App:
         return self.graph_factory(agent_dict, supervisor_agent).compile()
 
     def execute_graph(self, message_placeholder) -> List[str]:
-        """Runs the scenario, processing messages interactively."""
+        """Runs the graph, processing messages interactively."""
         logging.info("Setting up and running graph")
         messages = []
         last_displayed_message = ""

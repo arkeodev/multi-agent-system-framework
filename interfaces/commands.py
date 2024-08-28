@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
@@ -54,7 +55,7 @@ class HelpCommand(Command):
         **• /help**
         *Display this help message*
 
-        **• /generate_config**
+        **• /generate_agents**
         *Generate agent configuration*
 
         **• /run**
@@ -71,7 +72,7 @@ class HelpCommand(Command):
             self.context["messages"].append({"role": "assistant", "content": help_text})
 
 
-class GenerateConfigCommand(Command):
+class GenerateAgentsCommand(Command):
     def execute(self):
         if not self.check_input():
             return
@@ -90,14 +91,20 @@ class GenerateConfigCommand(Command):
                     }
                 )
             return
-        self.context["config_json"] = generated_config
+        # Parse the generated config
+        config_dict = json.loads(generated_config)
+        # Update the config
+        self.context["config_json"] = json.dumps(config_dict, indent=2)
+        # Display the generated config
         with st.chat_message("assistant"):
-            st.code("Configuration generated successfully.")
-            st.code(generated_config, language="json")
+            st.code(
+                "Configuration generated successfully. Please provide a scenario to execute."
+            )
+            st.code(self.context["config_json"], language="json")
             self.context["messages"].append(
                 {
                     "role": "assistant",
-                    "content": f"Configuration generated successfully. Here's the generated configuration:\n\n```json\n{generated_config}\n```",
+                    "content": f"Configuration generated successfully. Here's the generated configuration:\n\n```json\n{self.context['config_json']}\n```\nPlease provide a scenario to execute.",
                 }
             )
 
@@ -106,9 +113,30 @@ class RunConfigCommand(Command):
     def execute(self):
         if not self.check_input() or not self.verify_config():
             return
+        # Initialize scenario in session state if not present
+        if "scenario" not in st.session_state:
+            st.session_state.scenario = ""
+
+        # Function to update scenario in session state
+        def update_scenario():
+            st.session_state.scenario = st.session_state.scenario_input
+
+        # Prompt for scenario with on_change callback
+        st.text_area(
+            "Enter the scenario to execute:",
+            key="scenario_input",
+            value=st.session_state.scenario,
+            on_change=update_scenario,
+        )
+        if not st.session_state.scenario:
+            st.warning("Please enter a scenario before running the configuration.")
+            return
+        logging.info(f"Running scenario: {st.session_state.scenario}")
         message_placeholder = st.empty()
         try:
-            user_config = AgentConfig.model_validate_json(self.context["config_json"])
+            config_dict = json.loads(self.context["config_json"])
+            config_dict["scenario"] = st.session_state.scenario
+            user_config = AgentConfig.model_validate(config_dict)
             app = App(
                 llm=self.context["llm"],
                 recursion_limit=self.context["recursion_limit"],
@@ -204,7 +232,8 @@ class ChangeConfigCommand(Command):
                 st.button("Cancel", on_click=self._handle_cancel)
 
     def _update_edited_config(self):
-        self.context["edited_config"] = self.context["config_editor"]
+        logging.info(f"Updating edited config: {st.session_state.config_editor}")
+        self.context["edited_config"] = st.session_state.config_editor
 
     def _handle_accept(self):
         try:
@@ -238,7 +267,7 @@ class CommandFactory:
     def create_command(command: str, context: Dict[str, Any]) -> Command:
         command_map = {
             "/help": HelpCommand,
-            "/generate_config": GenerateConfigCommand,
+            "/generate_agents": GenerateAgentsCommand,
             "/run": RunConfigCommand,
             "/visualize": VisualizeGraphCommand,
             "/change_config": ChangeConfigCommand,
