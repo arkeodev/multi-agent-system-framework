@@ -31,7 +31,7 @@ def generate_config_json(llm: ChatOpenAI, documents: List[Document]) -> str:
     messages = [
         (
             "system",
-            "You are tasked with generating a JSON configuration for a multi-agent environment. The configuration should define the roles, prompts, and scenario details for the agents involved. Use the example below as a template for structure only. Do not copy any of the values, only use the structure:",
+            "You are tasked with generating a JSON configuration for a multi-agent environment. The configuration should define the roles, prompts for the agents involved. Use the example below as a template for structure only. Do not copy any of the values, only use the structure:",
         ),
         (
             "system",
@@ -60,7 +60,6 @@ def generate_config_json(llm: ChatOpenAI, documents: List[Document]) -> str:
             '            "prompt": "This is the specific prompt for Role 3."\n'
             "        }\n"
             "    ],\n"
-            '    "scenario": "This is where the scenario description goes."\n'
             "}\n",
         ),
         (

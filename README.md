@@ -10,10 +10,10 @@ This project implements a robust multi-agent system framework leveraging Streaml
 
 - **Modular Architecture**: Easily swap AI models, document loaders, and other components to fit your specific needs.
 - **Agent-Based System**: Leverage multiple agents, each with distinct roles, to collaboratively achieve complex objectives.
-- **Dynamic Agent Configuration with Scenario Generator**: Utilize an integrated language model to dynamically generate agent roles and configuration scenarios.
+- **Dynamic Agent Configuration**: Utilize an integrated language model to dynamically generate agent roles and configuration based on input documents or URLs.
 - **Supervisor-Managed Agent Orchestration**: A supervisor agent manages the orchestration of tasks, ensuring efficient collaboration among agents.
 - **Interactive UI**: Streamlit-based interface for an intuitive experience in defining scenarios and visualizing results.
-- **Customizable Scenarios**: Easily configure agents and their tasks using a user-friendly JSON interface, enabling the execution of tailored scenarios.
+- **Customizable Scenarios**: Easily input custom scenarios to be executed by the configured agents.
 - **Comprehensive Document Processing**: Load and process a variety of document types, converting them into LangChain's `Document` format enriched with metadata.
 - **FAISS Integration**: Store and retrieve processed documents efficiently using FAISS vector storage, enabling rapid responses to complex queries.
 - **LangFuse Integration**: Seamlessly trace and monitor LLM operations using LangFuse, either through an `.env` file or direct input of keys via the UI.
@@ -37,43 +37,6 @@ Before running the application, ensure you have the following installed:
    ```bash
    poetry install
    ```
-
-## Agent Configuration
-
-For those who wish to manually create a scenario configuration file, can modify the sample provided below. This sample outlines how to define agent roles and tailor scenarios dynamically.
-
-### Sample agent_configuration.json
-
-Here’s an example of configuring a scenario for an astronomy research team. The scenario can be downloaded from [this link](https://arxiv.org/pdf/2408.00026).
-
-```json
-{
-    "supervisor_prompts": {
-        "initial": "You are the Mission Coordinator managing an X-ray astronomy crew. Your task is to oversee the study of the Virgo Cluster using the LEIA X-ray imager. Direct who acts next or FINISH when done.",
-        "decision": "Who should act next? Or should we FINISH? Choose from: {options}"
-    },
-    "members": [
-        "Data Analyst",
-        "Observation Specialist",
-        "Imaging Scientist"
-    ],
-    "roles": [
-        {
-            "name": "Data Analyst",
-            "prompt": "You are a Data Analyst. Your role is to process and analyze the telemetry and spectral data received from the LEIA observations. Interpret findings in relation to the known characteristics of the Virgo Cluster."
-        },
-        {
-            "name": "Observation Specialist",
-            "prompt": "You are the Observation Specialist. Manage the observation schedules and ensure the telescope's alignment and calibration are optimized for capturing high-quality X-ray images of the Virgo Cluster."
-        },
-        {
-            "name": "Imaging Scientist",
-            "prompt": "You are an Imaging Scientist. Your task is to process the images captured by LEIA, correct for any distortions or anomalies, and prepare the data for detailed analysis by the Data Analyst."
-        }
-    ],
-    "scenario": "Mission Brief: Virgo Cluster X-ray Study\nThe mission involves using the LEIA X-ray imager to conduct detailed observations of the Virgo Cluster. Your team consists of a Data Analyst, Observation Specialist, and Imaging Scientist.\nObjectives:\n1. Align and calibrate the LEIA telescope to begin observations of the Virgo Cluster.\n2. Capture and process X-ray images, identifying key features and anomalies.\n3. Analyze the spectral and imaging data to provide insights into the cluster's composition and dynamics.\nExecute the mission, with each crew member performing their specific roles."
-}
-```
 
 ## Usage
 

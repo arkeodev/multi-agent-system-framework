@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
@@ -29,6 +30,7 @@ class Command(ABC):
                         "content": "Please provide either a file or URL.",
                     }
                 )
+                logging.error("No file or URL provided.")
             return False
         return True
 
@@ -42,6 +44,7 @@ class Command(ABC):
                         "content": "Please generate a configuration first.",
                     }
                 )
+            logging.error("No configuration provided.")
             return False
         return True
 
@@ -54,16 +57,16 @@ class HelpCommand(Command):
         **• /help**
         *Display this help message*
 
-        **• /generate_config**
+        **• /generate-agents**
         *Generate agent configuration*
 
         **• /run**
         *Run the current configuration*
 
-        **• /visualize**
+        **• /visualise**
         *Visualize the graph*
 
-        **• /change_config**
+        **• /change-config**
         *Change the current configuration (provide JSON as argument)*
         """
         with st.chat_message("assistant"):
@@ -71,7 +74,7 @@ class HelpCommand(Command):
             self.context["messages"].append({"role": "assistant", "content": help_text})
 
 
-class GenerateConfigCommand(Command):
+class GenerateAgentsCommand(Command):
     def execute(self):
         if not self.check_input():
             return
@@ -90,14 +93,20 @@ class GenerateConfigCommand(Command):
                     }
                 )
             return
-        self.context["config_json"] = generated_config
+        # Parse the generated config
+        config_dict = json.loads(generated_config)
+        # Update the config
+        self.context["config_json"] = json.dumps(config_dict, indent=2)
+        # Display the generated config
         with st.chat_message("assistant"):
-            st.code("Configuration generated successfully.")
-            st.code(generated_config, language="json")
+            st.code(
+                "Configuration generated successfully. Please provide a scenario to execute."
+            )
+            st.code(self.context["config_json"], language="json")
             self.context["messages"].append(
                 {
                     "role": "assistant",
-                    "content": f"Configuration generated successfully. Here's the generated configuration:\n\n```json\n{generated_config}\n```",
+                    "content": f"Configuration generated successfully. Here's the generated configuration:\n\n```json\n{self.context['config_json']}\n```\nPlease provide a scenario to execute.",
                 }
             )
 
@@ -106,9 +115,33 @@ class RunConfigCommand(Command):
     def execute(self):
         if not self.check_input() or not self.verify_config():
             return
+        # Initialize scenario in context if not present
+        if "scenario" not in self.context:
+            self.context["scenario"] = ""
+        # Prompt for scenario with on_change callback
+        st.text_area(
+            "Enter the scenario to execute:",
+            key="scenario_input",
+            value=self.context["scenario"],
+            on_change=self._update_scenario,
+        )
+        col1, col2 = st.columns(2)
+        with col1:
+            st.button("Accept", on_click=self._run_scenario)
+        with col2:
+            st.button("Cancel", on_click=self._handle_cancel)
+
+    def _update_scenario(self):
+        self.context["scenario"] = st.session_state.scenario_input
+
+    def _run_scenario(self):
+        logging.info(f"Running scenario: {self.context["scenario"]}")
+
         message_placeholder = st.empty()
         try:
-            user_config = AgentConfig.model_validate_json(self.context["config_json"])
+            config_dict = json.loads(self.context["config_json"])
+            config_dict["scenario"] = self.context["scenario"]
+            user_config = AgentConfig.model_validate(config_dict)
             app = App(
                 llm=self.context["llm"],
                 recursion_limit=self.context["recursion_limit"],
@@ -127,6 +160,7 @@ class RunConfigCommand(Command):
                         "content": f"Execution completed. Results:\n```\n{messages}\n```",
                     }
                 )
+            st.session_state.scenario = self.context["scenario"]
         except Exception as e:
             with st.chat_message("assistant"):
                 st.error(f"Error running the config: {str(e)}")
@@ -137,13 +171,32 @@ class RunConfigCommand(Command):
                     }
                 )
 
+    def _handle_cancel(self):
+        self.context["scenario"] = ""
+        st.info("Changes discarded.")
+        self.context["messages"].append(
+            {
+                "role": "assistant",
+                "content": "Changes discarded. Please provide a scenario to execute.",
+            }
+        )
+
 
 class VisualizeGraphCommand(Command):
     def execute(self):
         if not self.verify_config():
             return
+        # Check if scenario exists in context, if not, prompt for it
+        if not st.session_state.scenario:
+            st.warning("Please enter a scenario before visualizing the graph.")
+            return
+
         try:
-            user_config = AgentConfig.model_validate_json(self.context["config_json"])
+            logging.info(f"Visualizing graph for config: {self.context['config_json']}")
+            config_dict = json.loads(self.context["config_json"])
+            config_dict["scenario"] = st.session_state.scenario
+            user_config = AgentConfig.model_validate(config_dict)
+            logging.debug(f"Visualizing graph for config: {user_config}")
             app = App(
                 llm=self.context["llm"],
                 recursion_limit=self.context["recursion_limit"],
@@ -153,7 +206,6 @@ class VisualizeGraphCommand(Command):
                 langfuse_handler=self.context["langfuse_handler"],
             )
             graph_image = app.visualise_graph()
-
             img_byte_arr = io.BytesIO()
             graph_image.save(img_byte_arr, format="PNG")
             img_byte_arr = img_byte_arr.getvalue()
@@ -171,6 +223,9 @@ class VisualizeGraphCommand(Command):
                         "role": "assistant",
                         "content": "Graph visualization generated. You can download the image using the button above.",
                     }
+                )
+                logging.info(
+                    f"Graph visualization generated for scenario: {self.context['scenario']}"
                 )
         except Exception as e:
             with st.chat_message("assistant"):
@@ -204,7 +259,7 @@ class ChangeConfigCommand(Command):
                 st.button("Cancel", on_click=self._handle_cancel)
 
     def _update_edited_config(self):
-        self.context["edited_config"] = self.context["config_editor"]
+        self.context["edited_config"] = st.session_state.config_editor
 
     def _handle_accept(self):
         try:
@@ -238,10 +293,10 @@ class CommandFactory:
     def create_command(command: str, context: Dict[str, Any]) -> Command:
         command_map = {
             "/help": HelpCommand,
-            "/generate_config": GenerateConfigCommand,
+            "/generate-agents": GenerateAgentsCommand,
             "/run": RunConfigCommand,
-            "/visualize": VisualizeGraphCommand,
-            "/change_config": ChangeConfigCommand,
+            "/visualise": VisualizeGraphCommand,
+            "/change-config": ChangeConfigCommand,
         }
         if command in command_map:
             return command_map[command](context)
@@ -275,6 +330,7 @@ def process_command(command: str, session_state: Dict[str, Any]):
         "config_json": session_state.get("config_json"),
         "recursion_limit": session_state.recursion_limit,
         "langfuse_handler": session_state.langfuse_handler,
+        "scenario": session_state.get("scenario", ""),
     }
     handle_command(command, context)
 
@@ -282,3 +338,4 @@ def process_command(command: str, session_state: Dict[str, Any]):
     session_state.messages = context["messages"]
     if "config_json" in context:
         session_state.config_json = context["config_json"]
+    session_state.scenario = context.get("scenario", "")
