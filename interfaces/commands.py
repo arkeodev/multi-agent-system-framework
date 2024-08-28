@@ -55,16 +55,16 @@ class HelpCommand(Command):
         **• /help**
         *Display this help message*
 
-        **• /generate_agents**
+        **• /generate-agents**
         *Generate agent configuration*
 
         **• /run**
         *Run the current configuration*
 
-        **• /visualize**
+        **• /visualise**
         *Visualize the graph*
 
-        **• /change_config**
+        **• /change-config**
         *Change the current configuration (provide JSON as argument)*
         """
         with st.chat_message("assistant"):
@@ -267,10 +267,10 @@ class CommandFactory:
     def create_command(command: str, context: Dict[str, Any]) -> Command:
         command_map = {
             "/help": HelpCommand,
-            "/generate_agents": GenerateAgentsCommand,
+            "/generate-agents": GenerateAgentsCommand,
             "/run": RunConfigCommand,
-            "/visualize": VisualizeGraphCommand,
-            "/change_config": ChangeConfigCommand,
+            "/visualise": VisualizeGraphCommand,
+            "/change-config": ChangeConfigCommand,
         }
         if command in command_map:
             return command_map[command](context)

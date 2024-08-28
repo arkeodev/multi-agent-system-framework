@@ -105,7 +105,7 @@ def handle_file_uploads():
 
 def handle_url() -> str:
     """Handle URL input and return the provided URL."""
-    return st.text_input("Enter URL", placeholder="Enter URL")
+    return st.text_input("Enter URL", placeholder="Enter URL", key="url_input")
 
 
 def display_chat_history():
@@ -150,3 +150,4 @@ def clear_session_state():
     st.cache_resource.clear()
     # Reset file uploader state
     st.session_state.file_uploader_key = str(random.randint(1000, 9999))
+    st.session_state.url_input = ""
