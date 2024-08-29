@@ -67,7 +67,7 @@ def agent_node(state: AgentState, agent: AgentExecutor, name: str) -> AgentState
 
 def supervisor_node(state: AgentState, supervisor_agent: Any) -> AgentState:
     logging.info(f"Supervisor Node - Current Step: {state.get('step', 'Not Set')}")
-    logging.info(f"Current state: {state}")
+    logging.debug(f"Current state: {state}")
     dynamic_context = {
         "messages": state["messages"],
         "scratchpad": state["scratchpad"][-1] if state["scratchpad"] else None,
