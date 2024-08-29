@@ -8,6 +8,7 @@ from langchain.agents import AgentExecutor
 from langchain_core.messages import BaseMessage
 from langgraph.graph import END, StateGraph
 
+from agents.agents import agent_registry, create_tool_based_agents
 from config.config import AGENT_SUPERVISOR
 
 
@@ -65,8 +66,8 @@ def agent_node(state: AgentState, agent: AgentExecutor, name: str) -> AgentState
 
 
 def supervisor_node(state: AgentState, supervisor_agent: Any) -> AgentState:
-    """Directs the graph's flow based on the supervisor's decision."""
     logging.info(f"Supervisor Node - Current Step: {state.get('step', 'Not Set')}")
+    logging.debug(f"Current state: {state}")
     dynamic_context = {
         "messages": state["messages"],
         "scratchpad": state["scratchpad"][-1] if state["scratchpad"] else None,
@@ -78,22 +79,34 @@ def supervisor_node(state: AgentState, supervisor_agent: Any) -> AgentState:
     scratchpad_entry = f"Step {state['step']}: Supervisor selected {selected_agent}."
     state = update_scratchpad(state, AGENT_SUPERVISOR, scratchpad_entry)
     logging.info(f"Supervisor decision: {selected_agent}")
+    logging.info(
+        f"Supervisor reasoning: {supervisor_decision.get('reasoning', 'No reasoning provided')}"
+    )
     return state
 
 
 def create_graph(
-    agent_dict: Dict[str, AgentExecutor], supervisor_agent: Any
+    agent_dict: Dict[str, AgentExecutor], supervisor_agent: Any, llm: Any
 ) -> StateGraph:
     """Constructs a state graph dynamically based on configured agent roles and transitions."""
     logging.info("Creating state graph...")
     graph = StateGraph(state_schema=AgentState)
+
+    # Add standard agents
+    standard_agents = create_tool_based_agents(llm)
+    for agent in standard_agents:
+        agent_dict[agent_registry.get_name(agent.name)] = agent.get_agent()
+
     for name, agent in agent_dict.items():
         graph.add_node(name, partial(agent_node, agent=agent, name=name))
+
     graph.add_node(
         AGENT_SUPERVISOR, partial(supervisor_node, supervisor_agent=supervisor_agent)
     )
+
     for name in agent_dict:
         graph.add_edge(name, AGENT_SUPERVISOR)
+
     graph.add_conditional_edges(
         AGENT_SUPERVISOR,
         lambda state: state["next"],

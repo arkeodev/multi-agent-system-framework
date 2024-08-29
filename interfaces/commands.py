@@ -6,10 +6,10 @@ from typing import Any, Dict
 
 import streamlit as st
 
-from agents.agent_config import generate_config_json
 from agents.rag import get_documents
 from config.config import AgentConfig
 from core.app import App
+from interfaces.generate_agents import generate_config_json
 
 
 class Command(ABC):

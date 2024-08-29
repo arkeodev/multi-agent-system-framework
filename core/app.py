@@ -9,7 +9,7 @@ from langfuse.callback import CallbackHandler
 from langgraph.graph.state import CompiledStateGraph
 from PIL import Image
 
-from agents.agent import AgentModel, create_agents
+from agents.agents import RoleBasedAgentModel, create_role_based_agents
 from agents.graph import create_graph
 from agents.rag import setup_rag_chain
 from agents.supervisor import create_team_supervisor
@@ -27,7 +27,7 @@ class App:
         file_config: Optional[FileUploadConfig] = None,
         url: Optional[str] = None,
         langfuse_handler: Optional[CallbackHandler] = None,
-        agent_factory=create_agents,
+        agent_factory=create_role_based_agents,
         rag_tool_factory=RagTool,
         supervisor_factory=create_team_supervisor,
         graph_factory=create_graph,
@@ -57,7 +57,7 @@ class App:
         agents = self.setup_agents()
         agent_dict = {agent.role_name: agent.agent for agent in agents}
         supervisor_agent = self.create_supervisor()
-        return self.graph_factory(agent_dict, supervisor_agent).compile()
+        return self.graph_factory(agent_dict, supervisor_agent, self.llm).compile()
 
     def execute_graph(self, message_placeholder) -> List[str]:
         """Runs the graph, processing messages interactively."""
@@ -87,7 +87,7 @@ class App:
 
         return messages
 
-    def setup_agents(self) -> List[AgentModel]:
+    def setup_agents(self) -> List[RoleBasedAgentModel]:
         """Configures agents based on the provided configuration."""
         logging.info("Setting up agents")
         rag_chain = setup_rag_chain(
@@ -96,7 +96,7 @@ class App:
             llm=self.llm,
         )
         rag_tool = self.rag_tool_factory(rag_chain=rag_chain)
-        agents: List[AgentModel] = self.agent_factory(
+        agents: List[RoleBasedAgentModel] = self.agent_factory(
             self.llm, [rag_tool], self.agent_config["roles"]
         )
         return agents
