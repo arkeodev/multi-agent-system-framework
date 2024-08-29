@@ -6,14 +6,18 @@ from typing import Any, Callable, Dict, List
 
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
+from agents.agents import agent_registry
 from config.config import FINISH, ROUTE_NAME
 
 
 def create_team_supervisor(
     llm: Any, members: List[str], supervisor_prompts: Dict[str, str]
 ) -> Callable:
-    """Creates a dynamic supervisor agent to manage team operations based on given prompts and team members."""
-    options = [FINISH] + members
+    """Create a supervisor for the team."""
+    # Add standard agent names to the members list
+    all_members = members + agent_registry.get_all_names()
+    options = [FINISH] + all_members
+    logging.info(f"Supervisor options: {options}")
 
     function_def = {
         "name": ROUTE_NAME,
@@ -41,14 +45,13 @@ def create_team_supervisor(
     )
 
     def invoke_supervisor(state: Dict) -> Dict:
-        """Invokes the supervisor with the current state and updates it based on the supervisor's decision."""
+        logging.info("Invoking supervisor")
         dynamic_context = {
             "messages": state["messages"],
             "scratchpad": state.get("scratchpad", []),
             "step": state["step"],
         }
         result = supervisor_agent.invoke(dynamic_context)
-        logging.debug(f"Supervisor response: {result}")
         if (
             hasattr(result, "additional_kwargs")
             and "function_call" in result.additional_kwargs
@@ -57,6 +60,7 @@ def create_team_supervisor(
             if function_call and function_call.get("name") == ROUTE_NAME:
                 arguments = json.loads(function_call["arguments"])
                 state["next"] = arguments["next"]
+                logging.info(f"Supervisor decided next agent: {state['next']}")
         return state
 
     return invoke_supervisor
