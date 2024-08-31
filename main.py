@@ -2,7 +2,6 @@ import logging
 
 import streamlit as st
 
-from config.model_config import model_config_dict
 from core.event_manager import EventManager
 from core.state_manager import StateManager
 from interfaces.ui_layout import display_chat_widget, layout_streamlit_ui
