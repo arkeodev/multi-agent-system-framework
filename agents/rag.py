@@ -15,12 +15,18 @@ from services.document_service import load_documents
 from services.url_service import WebScraper
 
 
-def setup_rag_chain(files_path_list: List[str], url: str, llm: ChatOpenAI) -> Any:
+def setup_rag_chain(
+    files_path_list: List[str], url: str, llm: Optional[ChatOpenAI]
+) -> Any:
     """
     Set up a Retrieval-Augmented Generation (RAG) chain using either loaded
-    documents or documents extrcted from url and save the resulting vector index.
+    documents or documents extracted from url and save the resulting vector index.
     """
     logging.info(f"Setting up RAG chain for: {files_path_list or url}")
+
+    if llm is None:
+        logging.error("LLM is not initialized. Cannot set up RAG chain.")
+        return None
 
     # Load documents using the new document_loader module
     docs = get_documents(files_path_list, url)
@@ -47,7 +53,15 @@ def setup_rag_chain(files_path_list: List[str], url: str, llm: ChatOpenAI) -> An
         logging.info("RAG chain setup complete")
         return rag_chain
     else:
-        raise ValueError("No documents were loaded, RAG chain setup cannot proceed.")
+        # Create a simple RAG chain without documents
+        logging.info("No documents provided. Creating a simple RAG chain.")
+        rag_prompt = ChatPromptTemplate.from_template(
+            "Query: {question}\n\nProvide a general response to the query. If you can't answer, say you don't know."
+        )
+        rag_chain = (
+            {"question": itemgetter("question")} | rag_prompt | llm | StrOutputParser()
+        )
+        return rag_chain
 
 
 def get_documents(

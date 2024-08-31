@@ -285,3 +285,10 @@ class WebScraper:
         title = soup.title.string if soup.title else ""
         logging.info(f"Extracted title: {title}")
         return title
+
+
+def process_url_and_add_to_faiss(url: str, faiss_index):
+    web_scraper = WebScraper()
+    documents = web_scraper.scrape_website(url)
+    for doc in documents:
+        faiss_index.add_texts([doc.page_content], metadatas=[doc.metadata])

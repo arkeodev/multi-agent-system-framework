@@ -2,9 +2,7 @@
 
 import json
 import logging
-from typing import List
 
-from langchain.schema import Document
 from langchain_openai import ChatOpenAI
 
 from utilities.json_utils import format_json
@@ -20,12 +18,14 @@ def clean_json_string(raw_string: str) -> str:
     return cleaned_string
 
 
-def generate_config_json(llm: ChatOpenAI, documents: List[Document]) -> str:
+def generate_config_json(llm: ChatOpenAI, faiss_index) -> str:
     """Generate a configuration file using the LLM based on the provided documents."""
     logging.info("Generating the configuration from documents")
 
-    # Combine all document contents
-    combined_content = "\n\n".join([doc.page_content for doc in documents])
+    # Use the FAISS index to retrieve relevant information
+    query = "Generate agent configuration"
+    relevant_docs = faiss_index.similarity_search(query)
+    combined_content = "\n\n".join([doc.page_content for doc in relevant_docs])
 
     # Prompt LLM to generate agent configuration based on combined content
     messages = [

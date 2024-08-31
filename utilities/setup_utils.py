@@ -7,6 +7,8 @@ import streamlit as st
 from dotenv import load_dotenv
 from langfuse.callback import CallbackHandler
 
+from core.state_manager import ChatState
+
 
 def setup_logging():
     """Sets up logging configuration."""
@@ -34,6 +36,9 @@ def configure_session_state():
         "config_json": None,
         "messages": [],
         "langfuse_handler": None,
+        "step": "query_specification",
+        "chat_state": ChatState.WAITING_FOR_QUERY,
+        "conversation_history": [],
     }
     for key, value in session_defaults.items():
         st.session_state.setdefault(key, value)

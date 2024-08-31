@@ -65,3 +65,8 @@ def generate_metadata(document: Document, file_path: str) -> dict:
         "content_length": len(document.page_content),
     }
     return metadata
+
+
+def add_documents_to_faiss(documents: List[Document], faiss_index):
+    for doc in documents:
+        faiss_index.add_texts([doc.page_content], metadatas=[doc.metadata])

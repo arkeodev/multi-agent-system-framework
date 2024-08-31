@@ -21,13 +21,15 @@ class Command(ABC):
         pass
 
     def check_input(self) -> bool:
-        if not self.context["file_upload_config"] and not self.context["url"]:
+        if not self.context.get("file_upload_config") and not self.context.get("url"):
             with st.chat_message("assistant"):
-                st.warning("Please provide either a file or URL.")
+                st.warning(
+                    "Please provide either a file or URL using 'file:' or 'url:' prefix in the chat."
+                )
                 self.context["messages"].append(
                     {
                         "role": "assistant",
-                        "content": "Please provide either a file or URL.",
+                        "content": "Please provide either a file or URL using 'file:' or 'url:' prefix in the chat.",
                     }
                 )
                 logging.error("No file or URL provided.")
@@ -37,11 +39,13 @@ class Command(ABC):
     def verify_config(self) -> bool:
         if not self.context.get("config_json"):
             with st.chat_message("assistant"):
-                st.warning("Please generate a configuration first.")
+                st.warning(
+                    "Please generate a configuration first using /generate-agents command."
+                )
                 self.context["messages"].append(
                     {
                         "role": "assistant",
-                        "content": "Please generate a configuration first.",
+                        "content": "Please generate a configuration first using /generate-agents command.",
                     }
                 )
             logging.error("No configuration provided.")
@@ -324,12 +328,12 @@ def handle_command(command: str, context: Dict[str, Any]):
 def process_command(command: str, session_state: Dict[str, Any]):
     context = {
         "messages": session_state.messages,
-        "file_upload_config": session_state.file_upload_config,
-        "url": session_state.url,
+        "file_upload_config": session_state.get("file_upload_config"),
+        "url": session_state.get("url"),
         "llm": session_state.llm,
         "config_json": session_state.get("config_json"),
         "recursion_limit": session_state.recursion_limit,
-        "langfuse_handler": session_state.langfuse_handler,
+        "langfuse_handler": session_state.get("langfuse_handler"),
         "scenario": session_state.get("scenario", ""),
     }
     handle_command(command, context)
